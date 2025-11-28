@@ -1,0 +1,10 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "garie",
+      "passHash": "$2b$10$lKPNnJdtfHLhTEMIJ7vooOl6BOuRqTxOygcZgDf3jLQLGBlE.KnKe",
+      "role": "partner"
+    }
+  ]
+}

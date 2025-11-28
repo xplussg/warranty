@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-PLUS | Admin Dashboard</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Consistent Brand Palette */
+            --red-primary: #D32F2F;
+            --red-deep: #8A151B; 
+            --red-darkest: #4A0A0E;
+            --bg-body: #F9F9F9;
+            --white: #FFFFFF;
+            --text-main: #2B0505;
+            --text-muted: #886666;
+            --border-subtle: #FFEBEE;
+            
+            /* UI Tokens */
+            --shadow-card: 0 4px 20px rgba(138, 21, 27, 0.06);
+            --shadow-hover: 0 10px 30px rgba(138, 21, 27, 0.12);
+            --radius: 16px;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, var(--red-deep) 0%, var(--red-darkest) 100%);
+            color: var(--white);
+            padding: 40px 30px;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            margin-bottom: 50px;
+            letter-spacing: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
+        
+        .nav-item:hover, .nav-item.active {
+            color: var(--white);
+            padding-left: 10px;
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+        }
+
+        /* Header & Search */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--red-darkest);
+        }
+        .page-title p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .search-box {
+            background: var(--white);
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            width: 350px;
+            border: 1px solid var(--border-subtle);
+        }
+        .search-box input {
+            border: none; outline: none;
+            width: 100%; margin-left: 10px;
+            color: var(--red-darkest);
+            font-family: 'Montserrat', sans-serif;
+        }
+        .search-box i { color: var(--red-primary); }
+
+        /* --- The Table (Card Style) --- */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 15px; /* Creates space between rows */
+        }
+
+        th {
+            text-align: left;
+            padding: 0 20px 10px 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Row Styling (The Card Look) */
+        tbody tr {
+            background: var(--white);
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+            z-index: 10;
+            position: relative;
+        }
+
+        td {
+            padding: 25px 20px;
+            vertical-align: middle;
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        /* Rounded Corners for the Row */
+        td:first-child {
+            border-top-left-radius: var(--radius);
+            border-bottom-left-radius: var(--radius);
+            border-left: 1px solid var(--border-subtle);
+        }
+        td:last-child {
+            border-top-right-radius: var(--radius);
+            border-bottom-right-radius: var(--radius);
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        /* Data Formatting */
+        .user-info h4 { font-size: 0.95rem; color: var(--red-darkest); font-weight: 600; }
+        .user-info span { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        
+        .code-block {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: var(--bg-body);
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: var(--red-deep);
+            border: 1px solid #eee;
+            letter-spacing: -0.5px;
+        }
+
+        .date-info { font-size: 0.85rem; color: var(--text-main); }
+        .date-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status-active { background: #E8F5E9; color: #2E7D32; } /* Keep green for UX clarity or... */
+        /* Since you asked for Red/White/Gold palette strictness: */
+        .status-active-brand { background: #FFF8E1; color: #BFA01D; border: 1px solid #F3E5AB; }
+        .status-expired { background: var(--bg-body); color: var(--text-muted); border: 1px solid #ddd; }
+
+        /* Actions */
+        .action-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: 0.2s;
+            color: var(--text-muted);
+        }
+        .action-btn:hover { background: var(--border-subtle); color: var(--red-primary); }
+        .btn-delete:hover { color: #D32F2F; background: #FFEBEE; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .sidebar { width: 80px; padding: 40px 0; display: flex; flex-direction: column; align-items: center; }
+            .brand { font-size: 0.8rem; text-align: center; }
+            .nav-item span { display: none; }
+            .nav-item i { margin: 0; font-size: 1.2rem; }
+            .main-content { margin-left: 80px; padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="brand">X-PLUS</div>
+        <div class="nav-links">
+            <a href="#" class="nav-item">
+                <i class="fas fa-home"></i> <span>Overview</span>
+            </a>
+            <a href="#" class="nav-item active">
+                <i class="fas fa-shield-alt"></i> <span>Warranties</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-users"></i> <span>Customers</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-map-marker-alt"></i> <span>Locations</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-cog"></i> <span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="page-title">
+                <h1>Submissions</h1>
+                <p>Manage incoming warranty registrations and claims.</p>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search by Name, Code, or Email...">
+            </div>
+        </header>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="padding-left: 30px;">Customer Profile</th>
+                        <th>Product Details</th>
+                        <th>Coverage Period</th>
+                        <th>Registration Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <!-- Row 1 (Based on "donald toh" - Expired) -->
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <h4>Donald Toh</h4>
+                                <span>tohdonald@yahoo.com.sg</span>
+                                <span style="font-size:0.75rem; color: var(--red-primary);">+65 9005 7305</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="code-block">1939624969868393</div>
+                            <span class="date-label">Unknown Model</span>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-label">Purchased:</span> 2023-05-08<br>
+                                <span class="date-label">Expires:</span> 2023-11-04
+                            </div>
+                        </td>
+                        <td>09/05/2023</td>
+                        <td><span class="status-badge status-expired">Expired</span></td>
+                        <td>
+                            <button class="action-btn" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+
+                    <!-- Row 2 (Based on "Kenny Tan" - Expired) -->
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <h4>Kenny Tan</h4>
+                                <span>Lookforkenny@gmail.com</span>
+                                <span style="font-size:0.75rem; color: var(--red-primary);">+65 8288 6455</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="code-block">1939887419327127</div>
+                            <span class="date-label">Unknown Model</span>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-label">Purchased:</span> 2023-05-09<br>
+                                <span class="date-label">Expires:</span> 2023-11-05
+                            </div>
+                        </td>
+                        <td>10/05/2023</td>
+                        <td><span class="status-badge status-expired">Expired</span></td>
+                        <td>
+                            <button class="action-btn" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+
+                    <!-- Row 3 (Based on "Ain" - Active/Future Date) -->
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <h4>Ain</h4>
+                                <span>Qurratuainrosle@hotmail.com</span>
+                                <span style="font-size:0.75rem; color: var(--red-primary);">+65 8308 6048</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="code-block">1939576158608708</div>
+                            <span class="date-label">UV Nano Glass</span>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-label">Purchased:</span> 2025-09-30<br>
+                                <span class="date-label">Expires:</span> 2026-03-29
+                            </div>
+                        </td>
+                        <td>01/10/2025</td>
+                        <td><span class="status-badge status-active-brand">Active</span></td>
+                        <td>
+                            <button class="action-btn" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+
+                    <!-- Row 4 (Based on "Chris Liu" - Active) -->
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <h4>Chris Liu</h4>
+                                <span>Chris.cee.liu@gmail.com</span>
+                                <span style="font-size:0.75rem; color: var(--red-primary);">+65 8298 0268</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="code-block">2428789504292597</div>
+                            <span class="date-label">X-Buffer Privacy</span>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-label">Purchased:</span> 2025-09-30<br>
+                                <span class="date-label">Expires:</span> 2026-03-29
+                            </div>
+                        </td>
+                        <td>01/10/2025</td>
+                        <td><span class="status-badge status-active-brand">Active</span></td>
+                        <td>
+                            <button class="action-btn" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                    
+                     <!-- Row 5 (Based on "Cherilyn" - With File) -->
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <h4>Cherilyn</h4>
+                                <span>Customerno@email.com</span>
+                                <span style="font-size:0.75rem; color: var(--red-primary);">+65 8448 2621</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="code-block">1939404402434603</div>
+                            <span class="date-label"><i class="fas fa-paperclip"></i> File Attached</span>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-label">Purchased:</span> 2025-09-30<br>
+                                <span class="date-label">Expires:</span> 2026-03-29
+                            </div>
+                        </td>
+                        <td>01/10/2025</td>
+                        <td><span class="status-badge status-active-brand">Active</span></td>
+                        <td>
+                            <button class="action-btn" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Mockup -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 30px; gap: 10px;">
+            <button style="border: none; background: white; padding: 10px 15px; border-radius: 8px; color: #ccc;"><i class="fas fa-chevron-left"></i></button>
+            <button style="border: none; background: var(--red-deep); color: white; padding: 10px 15px; border-radius: 8px; box-shadow: 0 5px 15px rgba(138,21,27,0.3);">1</button>
+            <button style="border: none; background: white; color: #555; padding: 10px 15px; border-radius: 8px;">2</button>
+            <button style="border: none; background: white; color: #555; padding: 10px 15px; border-radius: 8px;">3</button>
+            <button style="border: none; background: white; color: #555; padding: 10px 15px; border-radius: 8px;"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+    </main>
+
+</body>
+</html>

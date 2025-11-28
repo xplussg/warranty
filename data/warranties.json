@@ -1,0 +1,35 @@
+{
+  "warranties": [
+    {
+      "id": 1001,
+      "name": "Sample User",
+      "email": "garie@rabbit.com.sg",
+      "emailAlt": "",
+      "phoneModel": "iPhone 14 Pro",
+      "mobile": "96558265",
+      "country": "Singapore",
+      "protectorType": "X-Buffer Clear",
+      "purchaseDate": "2023-10-07",
+      "expiryDate": "2024-04-04",
+      "productCode": "1939767536506336326",
+      "status": "Claimed",
+      "createdAt": "2025-11-21T20:29:26Z"
+    },
+    {
+      "id": 1002,
+      "name": "Sample User",
+      "email": "garie@rabbit.com.sg",
+      "emailAlt": "",
+      "phoneModel": "iPhone",
+      "mobile": "",
+      "country": "Singapore",
+      "protectorType": "Dream Case",
+      "purchaseDate": "2025-06-20",
+      "expiryDate": "2025-12-17",
+      "productCode": "8899090098090287",
+      "status": "Claimed",
+      "createdAt": "2025-11-21T10:57:51Z",
+      "claimedAt": "2025-11-22T09:57:32.901Z"
+    }
+  ]
+}

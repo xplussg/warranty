@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-PLUS | Warranty Registration</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Palette: White, Red, and Shades of Red */
+            --red-primary: #D32F2F;       /* Bright Brand Red */
+            --red-deep: #8A151B;          /* Elegant Burgundy */
+            --red-darkest: #4A0A0E;       /* Deep Text */
+            --red-light: #FFEBEE;         /* Very pale red for backgrounds */
+            --red-border: #FFCDD2;        /* Soft border color */
+            --white: #FFFFFF;
+            
+            /* Design Tokens from the First Design */
+            --shadow: 0 20px 60px rgba(138, 21, 27, 0.15);
+            --radius-outer: 24px;
+            --radius-inner: 12px;
+            --transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            /* Soft gradient background */
+            background: linear-gradient(135deg, #fffcfc 0%, var(--red-light) 100%);
+            color: var(--red-darkest);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .warranty-container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--white);
+            border-radius: var(--radius-outer);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 35% 65%;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* --- LEFT PANEL (Visual Anchor) --- */
+        .info-panel {
+            background: linear-gradient(160deg, var(--red-primary) 0%, var(--red-deep) 100%);
+            padding: 60px 40px;
+            color: var(--white);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Abstract Red Circles */
+        .decor-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .c1 { width: 300px; height: 300px; top: -100px; left: -100px; }
+        .c2 { width: 400px; height: 400px; bottom: -150px; right: -150px; }
+
+        .info-content { position: relative; z-index: 2; }
+
+        .info-panel h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            line-height: 1.1;
+            margin-bottom: 25px;
+        }
+
+        .info-panel p {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .terms-preview {
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 30px;
+        }
+        .terms-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+        }
+        .terms-item i {
+            background: rgba(255,255,255,0.2);
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        /* --- RIGHT PANEL (Form) --- */
+        .form-panel {
+            padding: 60px;
+            background: var(--white);
+        }
+
+        .form-header { margin-bottom: 30px; }
+        .form-header h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--red-primary);
+            font-size: 1.8rem;
+        }
+
+        /* Grid System for Inputs */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .full-width { grid-column: 1 / -1; }
+
+        .form-group { margin-bottom: 25px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--red-deep);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        /* Soft Input Styles */
+        .form-input, .form-select {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid var(--red-border);
+            border-radius: var(--radius-inner);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--red-darkest);
+            background: var(--white);
+            transition: var(--transition);
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--red-primary);
+            box-shadow: 0 0 0 4px var(--red-light);
+            transform: translateY(-2px);
+        }
+        
+        .form-input::placeholder { color: #ccb0b0; }
+
+        /* Helper Link */
+        .helper-text {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--red-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+        .helper-text:hover { color: var(--red-deep); text-decoration: underline; }
+
+        /* Custom Checkbox */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .custom-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            min-width: 20px; height: 20px;
+            border: 1px solid var(--red-primary);
+            border-radius: 6px; /* Softer radius */
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+            margin-top: 2px;
+            transition: var(--transition);
+        }
+        
+        .custom-checkbox::before {
+            content: "\f00c"; font-family: "Font Awesome 5 Free"; font-weight: 900;
+            color: white; font-size: 10px; transform: scale(0); transition: 0.2s;
+        }
+        
+        .custom-checkbox:checked { background: var(--red-primary); box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3); }
+        .custom-checkbox:checked::before { transform: scale(1); }
+        
+        .legal-text { font-size: 0.8rem; line-height: 1.6; color: #666; }
+        .legal-text a { color: var(--red-primary); text-decoration: none; border-bottom: 1px dotted var(--red-primary); }
+
+        /* Button */
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: var(--red-primary);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-inner);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 10px 20px rgba(211, 47, 47, 0.2);
+        }
+
+        .btn-submit:hover {
+            background: var(--red-deep);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(138, 21, 27, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .warranty-container { grid-template-columns: 1fr; border-radius: 0; }
+            .info-panel { padding: 40px 30px; }
+            .form-panel { padding: 40px 20px; }
+            .grid-2 { grid-template-columns: 1fr; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="warranty-container">
+        
+        <!-- Left Panel: Visual Anchor (Preserved First Design Style) -->
+        <div class="info-panel">
+            <div class="decor-circle c1"></div>
+            <div class="decor-circle c2"></div>
+            
+            <div class="info-content">
+                <h1>The X-PLUS <br>Promise</h1>
+                <p>
+                    You have chosen the finest protection for your device. Register your product now to activate your warranty and join our exclusive circle of care.
+                </p>
+
+                <div class="terms-preview">
+                    <div class="terms-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Sacrificial Barrier Protection</span>
+                    </div>
+                    <div class="terms-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Authenticity Verification</span>
+                    </div>
+                    <div class="terms-item">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>1-to-1 Exchange Policy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: The Form (New Content) -->
+        <div class="form-panel">
+            <div class="form-header">
+                <h2>Product Details</h2>
+            </div>
+
+            <form>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" placeholder="Full Name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" placeholder="name@email.com">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Phone Model</label>
+                        <input type="text" class="form-input" placeholder="e.g. iPhone 15 Pro">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact</label>
+                        <input type="tel" class="form-input" placeholder="+65">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Product Type</label>
+                        <select class="form-select">
+                            <option value="" disabled selected>Select Series</option>
+                            <option>UV Nano Glass</option>
+                            <option>X-Buffer Privacy</option>
+                            <option>Anti Shock (Matte)</option>
+                            <option>Pro Armorvisor</option>
+                            <option>Lens Protector</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <select class="form-select">
+                            <option>Singapore</option>
+                            <option>Malaysia</option>
+                            <option>Indonesia</option>
+                            <option>Thailand</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Product Code (16 or 20 digits)</label>
+                    <input type="text" class="form-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="20">
+                    <a href="#" class="helper-text">
+                        <i class="far fa-question-circle"></i> Need help finding your serial number?
+                    </a>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Date of Purchase</label>
+                        <input type="date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date of Expiry</label>
+                        <input type="date" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="pdpa" class="custom-checkbox" required>
+                        <label for="pdpa" class="legal-text">
+                            I have read and agreed with the <a href="#">PDPA Consent Clause</a>, <a href="#">Privacy Policy</a>, and <a href="#">Terms and Conditions</a>.
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Registration</button>
+            </form>
+        </div>
+
+    </div>
+
+</body>
+</html>

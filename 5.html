@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-PLUS | Data Management</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette */
+            --brand-red: #D32F2F;
+            --brand-burgundy: #6D0F14; /* Deep, authoritative header color */
+            --brand-hover: #FEEBEB;
+            --text-dark: #1a1a1a;
+            --text-light: #666;
+            --border-color: #E0E0E0;
+            --white: #FFFFFF;
+            
+            /* Dimensions */
+            --sidebar-width: 80px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #F4F5F7;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Compact Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .logo-mark {
+            font-family: 'Playfair Display', serif;
+            color: var(--brand-red);
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        .nav-icon {
+            width: 45px; height: 45px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-light);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-icon:hover, .nav-icon.active {
+            background: var(--brand-red);
+            color: white;
+            box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3);
+        }
+
+        /* --- Main Content --- */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Lock body scroll */
+        }
+
+        /* Header Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .title-group h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--brand-burgundy);
+        }
+        .title-group span { font-size: 0.8rem; color: var(--text-light); }
+
+        .actions-group { display: flex; gap: 15px; }
+
+        .filter-btn, .export-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .filter-btn:hover { border-color: var(--brand-red); color: var(--brand-red); }
+        .export-btn { background: var(--brand-red); color: white; border: none; }
+        .export-btn:hover { background: var(--brand-burgundy); }
+
+        /* --- The Data Grid (Table) --- */
+        .table-window {
+            background: var(--white);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            overflow: auto; /* Internal scroll */
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px; /* Ensure horizontal scroll on small screens */
+        }
+
+        /* Sticky Header for easy sorting */
+        thead th {
+            position: sticky;
+            top: 0;
+            background: var(--brand-burgundy);
+            color: white;
+            text-align: left;
+            padding: 18px 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer; /* Indicates Clickable */
+            user-select: none;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+
+        thead th:hover {
+            background: #4A0A0E; /* Darker shade on hover */
+        }
+
+        /* Sort Icons */
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sort-icon {
+            opacity: 0.3;
+            font-size: 0.8rem;
+        }
+        thead th:hover .sort-icon { opacity: 1; }
+        thead th.sorted-asc .sort-icon, thead th.sorted-desc .sort-icon {
+            opacity: 1; color: #ff8a80;
+        }
+
+        /* Table Body */
+        tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.1s;
+        }
+        tbody tr:hover {
+            background-color: var(--brand-hover);
+        }
+        
+        td {
+            padding: 15px 20px;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            vertical-align: middle;
+        }
+
+        /* Specific Column Styling */
+        .col-user { font-weight: 600; color: var(--brand-burgundy); }
+        .col-email { color: var(--text-light); font-size: 0.8rem; }
+        
+        .col-code { 
+            font-family: 'JetBrains Mono', monospace; 
+            background: #F5F5F5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #333;
+        }
+
+        .col-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        /* Status Pills */
+        .status-dot {
+            height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px;
+        }
+        .s-active { background-color: #2ecc71; }
+        .s-expired { background-color: #e74c3c; }
+
+        /* Action Menu */
+        .action-cell { text-align: right; }
+        .icon-btn {
+            border: none; background: transparent; cursor: pointer;
+            color: #999; padding: 5px; font-size: 1rem;
+        }
+        .icon-btn:hover { color: var(--brand-red); }
+
+        /* Pagination Footer */
+        .pagination {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            background: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-info { font-size: 0.8rem; color: #666; }
+        .page-controls button {
+            background: white; border: 1px solid #ddd;
+            padding: 5px 10px; border-radius: 4px; cursor: pointer;
+        }
+        .page-controls button:hover { border-color: var(--brand-red); color: var(--brand-red); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Compact Sidebar -->
+    <nav class="sidebar">
+        <div class="logo-mark">X</div>
+        <a href="#" class="nav-icon active"><i class="fas fa-table"></i></a>
+        <a href="#" class="nav-icon"><i class="fas fa-chart-pie"></i></a>
+        <a href="#" class="nav-icon"><i class="fas fa-users"></i></a>
+        <a href="#" class="nav-icon"><i class="fas fa-cog"></i></a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        
+        <!-- Toolbar -->
+        <header class="toolbar">
+            <div class="title-group">
+                <h1>Warranty Claims</h1>
+                <span>Total Records: 30,094</span>
+            </div>
+            <div class="actions-group">
+                <button class="filter-btn"><i class="fas fa-filter"></i> Filter: All Time</button>
+                <button class="filter-btn"><i class="fas fa-sort-amount-down"></i> Sort: Date</button>
+                <button class="export-btn"><i class="fas fa-download"></i> Export CSV</button>
+            </div>
+        </header>
+
+        <!-- Scrollable Table Window -->
+        <div class="table-window">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th class="sorted-asc"> <!-- Example of sorted state -->
+                            <div class="th-content">
+                                Name <i class="fas fa-sort-alpha-down sort-icon"></i>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-content">
+                                Contact Info <i class="fas fa-sort sort-icon"></i>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-content">
+                                Country <i class="fas fa-sort sort-icon"></i>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-content">
+                                Product Code <i class="fas fa-sort sort-icon"></i>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-content">
+                                Dates (Buy/Exp) <i class="fas fa-sort-numeric-down sort-icon"></i>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-content">
+                                Status <i class="fas fa-sort sort-icon"></i>
+                            </div>
+                        </th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <!-- Row 1 -->
+                    <tr>
+                        <td style="color: #999;">#35</td>
+                        <td>
+                            <div class="col-user">Donald Toh</div>
+                        </td>
+                        <td>
+                            <div class="col-email">tohdonald@yahoo.com.sg</div>
+                            <div style="font-size:0.75rem;">+65 9005 7305</div>
+                        </td>
+                        <td>Singapore</td>
+                        <td><span class="col-code">1939624969868393</span></td>
+                        <td>
+                            <div class="col-date">08/05/23</div>
+                            <div class="col-date" style="color:var(--brand-red);">04/11/23</div>
+                        </td>
+                        <td><span class="status-dot s-expired"></span> Expired</td>
+                        <td class="action-cell">
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </td>
+                    </tr>
+
+                    <!-- Row 2 -->
+                    <tr>
+                        <td style="color: #999;">#36</td>
+                        <td>
+                            <div class="col-user">Kenny Tan</div>
+                        </td>
+                        <td>
+                            <div class="col-email">Lookforkenny@gmail.com</div>
+                            <div style="font-size:0.75rem;">+65 8288 6455</div>
+                        </td>
+                        <td>Singapore</td>
+                        <td><span class="col-code">1939887419327127</span></td>
+                        <td>
+                            <div class="col-date">09/05/23</div>
+                            <div class="col-date" style="color:var(--brand-red);">05/11/23</div>
+                        </td>
+                        <td><span class="status-dot s-expired"></span> Expired</td>
+                        <td class="action-cell">
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </td>
+                    </tr>
+
+                    <!-- Row 3 (Active) -->
+                    <tr>
+                        <td style="color: #999;">#30088</td>
+                        <td>
+                            <div class="col-user">Ain</div>
+                        </td>
+                        <td>
+                            <div class="col-email">Qurratuainrosle@hotmail...</div>
+                            <div style="font-size:0.75rem;">+65 8308 6048</div>
+                        </td>
+                        <td>Singapore</td>
+                        <td><span class="col-code">1939576158608708</span></td>
+                        <td>
+                            <div class="col-date">30/09/25</div>
+                            <div class="col-date" style="color:#2ecc71;">29/03/26</div>
+                        </td>
+                        <td><span class="status-dot s-active"></span> Active</td>
+                        <td class="action-cell">
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </td>
+                    </tr>
+
+                    <!-- Row 4 (Active) -->
+                    <tr>
+                        <td style="color: #999;">#30089</td>
+                        <td>
+                            <div class="col-user">Chris Liu</div>
+                        </td>
+                        <td>
+                            <div class="col-email">Chris.cee.liu@gmail.com</div>
+                            <div style="font-size:0.75rem;">+65 8298 0268</div>
+                        </td>
+                        <td>Singapore</td>
+                        <td><span class="col-code">2428789504292597</span></td>
+                        <td>
+                            <div class="col-date">30/09/25</div>
+                            <div class="col-date" style="color:#2ecc71;">29/03/26</div>
+                        </td>
+                        <td><span class="status-dot s-active"></span> Active</td>
+                        <td class="action-cell">
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </td>
+                    </tr>
+
+                     <!-- Row 5 (With Attachment) -->
+                     <tr>
+                        <td style="color: #999;">#30092</td>
+                        <td>
+                            <div class="col-user">Cherilyn</div>
+                        </td>
+                        <td>
+                            <div class="col-email">Customerno@email.com</div>
+                            <div style="font-size:0.75rem;">+65 8448 2621</div>
+                        </td>
+                        <td>Singapore</td>
+                        <td>
+                            <span class="col-code">1939404402434603</span>
+                            <i class="fas fa-paperclip" style="font-size:0.7rem; color:var(--brand-red); margin-left:5px;"></i>
+                        </td>
+                        <td>
+                            <div class="col-date">30/09/25</div>
+                            <div class="col-date" style="color:#2ecc71;">29/03/26</div>
+                        </td>
+                        <td><span class="status-dot s-active"></span> Active</td>
+                        <td class="action-cell">
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <span class="page-info">Showing 1-10 of 30,094</span>
+            <div class="page-controls">
+                <button disabled>Prev</button>
+                <button>Next</button>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
