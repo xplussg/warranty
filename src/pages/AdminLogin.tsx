@@ -31,17 +31,17 @@ export default function AdminLogin() {
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium">Email</label>
-          <input id="email" type="email" className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2" value={email} onChange={e => setEmail(e.target.value)} />
+          <input id="email" type="email" className="mt-2 w-full h-12 rounded-md px-3" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         <div>
           <label htmlFor="password" className="block text-sm font-medium">Password</label>
           <div className="mt-2 relative">
-            <input id="password" type={show ? 'text' : 'password'} className="w-full rounded-md border border-slate-300 px-3 py-2 pr-10" value={password} onChange={e => setPassword(e.target.value)} />
+            <input id="password" type={show ? 'text' : 'password'} className="w-full h-12 rounded-md px-3 pr-10" value={password} onChange={e => setPassword(e.target.value)} />
             <button type="button" aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 text-brand" onClick={() => setShow(s => !s)}>
               {show ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-10-8-10-8a21.77 21.77 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 10 8 10 8a21.77 21.77 0 0 1-3.35 4.88"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-7 0-11 8-11 8s4 8 11 8 11-8 11-8-4-8-11-8zm0 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s3-8 11-8 11 8 11 8-3 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-7 0-11 8-11 8s4 8 11 8 11-8 11-8-4-8-11-8zm0 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
               )}
             </button>
           </div>
