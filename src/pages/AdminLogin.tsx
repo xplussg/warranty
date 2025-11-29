@@ -1,29 +1,53 @@
-import { useEffect, useState } from 'react'
-import { login, me } from '../lib/auth'
+'use client
+
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('') // ← username OR email
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [show, setShow] = useState(false)
   const navigate = useNavigate()
-  useEffect(() => {
-    ;(async () => {
-      const info = await me()
-      const session = info?.session
-      if (session) navigate('/owner/dashboard')
-    })()
-  }, [])
-  async function onSubmit(e: React.FormEvent) {
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      await login(email, password)
-      const info = await me()
-      if (info?.session) navigate('/owner/dashboard')
-      else setMessage('Logged in')
-    } catch (err: any) { setMessage(String(err?.message || 'Invalid credentials')) }
+    setLoading(true)
+    setMessage('')
+
+    let emailToUse = identifier.trim().toLowerCase()
+
+    // If it doesn't look like an email → try to resolve username
+    if (!emailToUse.includes('@')) {
+      const { data, error } = await supabase
+        .from('auth.users')
+        .select('email')
+        .eq('user_metadata->>username', identifier.trim())
+        .single()
+
+      if (!data) {
+        setMessage('Username not found')
+        setLoading(false)
+        return
+      }
+      emailToUse = data.email
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailToUse,
+      password,
+    })
+
+    if (error) {
+      setMessage('Invalid credentials')
+    } else {
+      navigate('/owner/dashboard')
+    }
+    setLoading(false)
   }
+
   return (
     <div style={{ fontFamily: 'Montserrat, sans-serif', background: 'linear-gradient(135deg, #fffcfc 0%, #FFEBEE 100%)', color: '#4A0A0E', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -50,28 +74,45 @@ export default function AdminLogin() {
       <div className="login-container">
         <div className="info-panel">
           <h1>Welcome back</h1>
-          <p>Sign in to manage product codes and warranty registrations.</p>
+          <p>Sign in with your <strong>username</strong> or email address.</p>
         </div>
         <div className="form-panel">
           <div className="form-header"><h2>Login</h2></div>
-          <form onSubmit={onSubmit}>
+          <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <input id="email" type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} />
+              <label className="form-label" htmlFor="identifier">Username or Email</label>
+              <input 
+                id="identifier"
+                type="text" 
+                required
+                className="form-input" 
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
+                placeholder="rabbit or xplus@rabbit.com.sg"
+              />
             </div>
             <div className="form-group input-with-toggle">
               <label className="form-label" htmlFor="password">Password</label>
-              <input id="password" type={show ? 'text' : 'password'} className="form-input" value={password} onChange={e => setPassword(e.target.value)} />
-              <button type="button" className="toggle-btn" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide password' : 'Show password'}>
-                {show ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-7 0-11 8-11 8s4 8 11 8 11-8 11-8-4-8-11-8zm0 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/><rect x="5" y="11" width="14" height="2" transform="rotate(45 12 12)" /></svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-7 0-11 8-11 8s4 8 11 8 11-8 11-8-4-8-11-8zm0 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
-                )}
+              <input 
+                id="password" 
+                type={showPassword ? 'text' : 'password'} 
+                className="form-input" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button 
+                type="button" 
+                className="toggle-btn" 
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
-            <button className="btn-submit" type="submit">Sign in</button>
-            {message && <div style={{ marginTop: 10, fontSize: 14 }}>{message}</div>}
+            <button className="btn-submit" type="submit" disabled={loading}>
+              {loading ? 'Logging in...' : 'Sign in'}
+            </button>
+            {message && <div style={{ marginTop: 10, color: message.includes('success') ? 'green' : 'red' }}>{message}</div>}
           </form>
         </div>
       </div>
