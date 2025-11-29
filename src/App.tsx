@@ -19,6 +19,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
   useEffect(() => {
+    const timer = setTimeout(() => { setSignedIn(false); setReady(true) }, 1500)
     ;(async () => {
       try {
         const info = await me();
@@ -26,6 +27,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
       } catch {
         setSignedIn(false)
       } finally {
+        clearTimeout(timer)
         setReady(true)
       }
     })()
@@ -39,12 +41,14 @@ function OwnerRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false)
   const [role, setRole] = useState<string | null>(null)
   useEffect(() => {
+    const timer = setTimeout(() => { setRole(null); setReady(true) }, 1500)
     ;(async () => {
       try {
         setRole(await getRole())
       } catch {
         setRole(null)
       } finally {
+        clearTimeout(timer)
         setReady(true)
       }
     })()
@@ -59,12 +63,14 @@ function PartnerRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false)
   const [role, setRole] = useState<string | null>(null)
   useEffect(() => {
+    const timer = setTimeout(() => { setRole(null); setReady(true) }, 1500)
     ;(async () => {
       try {
         setRole(await getRole())
       } catch {
         setRole(null)
       } finally {
+        clearTimeout(timer)
         setReady(true)
       }
     })()

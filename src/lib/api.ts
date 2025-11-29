@@ -212,8 +212,9 @@ export async function searchWarranties(q = '', page = 1, pageSize = 20) {
     const like = `%${q}%`
     if (role === 'partner') {
       query = query.or(`name.ilike.${like},email.ilike.${like},mobile.ilike.${like}`)
+    } else {
+      query = query.or(`name.ilike.${like},email.ilike.${like},mobile.ilike.${like},phone_model.ilike.${like},product_code.ilike.${like},country.ilike.${like},product_type.ilike.${like}`)
     }
-    // Owners fetch unfiltered and apply client-side filter for consistent UX
   }
 
   const from = (page - 1) * pageSize
