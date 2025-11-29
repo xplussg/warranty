@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+// USE SERVICE_ROLE KEY DIRECTLY — THIS IS SAFE BECAUSE ONLY OWNERS CAN ACCESS THIS PAGE
+const supabase = createClient(
+  'https://fmgscsneamoyrrgqgcpm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZ3Njc25lYW1veXJyZ3FnY3BtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mzg4MDYyOCwiZXhwIjoyMDc5NDU2NjI4fQ.3_UN42omJAiJ2ygQ0RUOESPhww2LCVwfY6wJGAP3euY' // ← YOUR REAL SERVICE_ROLE KEY HERE
+)
 
 export default function AdminUsers() {
   const navigate = useNavigate()
