@@ -53,7 +53,7 @@ serve(async (req) => {
     }
 
     // Use supplied password or generate one
-    const password = suppliedPassword && String(suppliedPassword).length >= 4
+    const password = suppliedPassword && String(suppliedPassword).length >= 6
       ? String(suppliedPassword)
       : (Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8))
 

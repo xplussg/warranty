@@ -130,14 +130,12 @@ export async function deleteCode(id: number) {
 }
 
 export async function searchWarrantiesByEmail(email: string) {
-  const cleanEmail = email.trim().toLowerCase()
+  const clean = email.trim()
+  const pattern = `%${clean}%`
   const { data, count, error } = await supabase
     .from('warranty_registrations')
     .select('*', { count: 'exact' })
-    .or(`email.ilike.${cleanEmail}`) // Basic check, but better to use eq if possible or ilike
-    // .eq('email', cleanEmail) // but case insensitive? Postgres is case sensitive usually unless type is citext
-    // Use ilike for email search
-    .ilike('email', cleanEmail)
+    .ilike('email', pattern)
 
   if (error) return { items: [], count: 0 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { listCodes, deleteCode } from '../lib/api'
 import { getRole } from '../lib/auth'
 
@@ -118,7 +119,11 @@ export default function AdminCodes() {
         </div>
       </div>
       <div className="mt-8">
-        <a className="rounded-md border border-slate-300 px-4 py-2 inline-block" href="/owner/dashboard">Return</a>
+        {role === 'partner' ? (
+          <Link className="rounded-md border border-slate-300 px-4 py-2 inline-block" to="/partner/dashboard">Return</Link>
+        ) : (
+          <Link className="rounded-md border border-slate-300 px-4 py-2 inline-block" to="/owner/dashboard">Return</Link>
+        )}
       </div>
       </div>
     </section>
