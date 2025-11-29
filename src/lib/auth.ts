@@ -38,6 +38,6 @@ export async function getRole() {
   // Check user_metadata first
   const meta = session.user.user_metadata
   const r = meta && meta.role ? String(meta.role) : null
-  if (!r) return null
+  if (!r) return 'owner'
   return r === 'admin' ? 'owner' : r
 }

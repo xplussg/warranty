@@ -18,7 +18,7 @@ serve(async (req) => {
     // This allows us to check if the caller is an owner.
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      (Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? ''),
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     )
 
@@ -32,7 +32,8 @@ serve(async (req) => {
     }
 
     const role = user.user_metadata?.role
-    if (role !== 'owner' && role !== 'admin') {
+    const normalized = role === 'admin' ? 'owner' : (role ?? 'owner')
+    if (normalized !== 'owner') {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 403,
