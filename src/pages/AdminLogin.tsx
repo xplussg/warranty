@@ -19,6 +19,7 @@ export default function AdminLogin() {
 
     let emailToUse = identifier.trim().toLowerCase()
 
+    // If no @ → treat as username
     if (!emailToUse.includes('@')) {
       const { data, error } = await supabase
         .from('auth.users')
@@ -32,8 +33,6 @@ export default function AdminLogin() {
         return
       }
       emailToUse = data.email
-    }
-
     }
 
     const { error } = await supabase.auth.signInWithPassword({
