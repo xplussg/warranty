@@ -19,7 +19,16 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
   useEffect(() => {
-    ;(async () => { const info = await me(); setSignedIn(Boolean(info?.session)); setReady(true) })()
+    ;(async () => {
+      try {
+        const info = await me();
+        setSignedIn(Boolean(info?.session))
+      } catch {
+        setSignedIn(false)
+      } finally {
+        setReady(true)
+      }
+    })()
   }, [])
   if (!ready) return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
   if (!signedIn) return <Navigate to="/login" replace />
@@ -30,9 +39,18 @@ function OwnerRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false)
   const [role, setRole] = useState<string | null>(null)
   useEffect(() => {
-    ;(async () => { setRole(await getRole()); setReady(true) })()
+    ;(async () => {
+      try {
+        setRole(await getRole())
+      } catch {
+        setRole(null)
+      } finally {
+        setReady(true)
+      }
+    })()
   }, [])
   if (!ready) return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
+  if (role === null) return <Navigate to="/login" replace />
   if (role !== 'owner') return <Navigate to="/partner/dashboard" replace />
   return children
 }
@@ -41,9 +59,18 @@ function PartnerRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false)
   const [role, setRole] = useState<string | null>(null)
   useEffect(() => {
-    ;(async () => { setRole(await getRole()); setReady(true) })()
+    ;(async () => {
+      try {
+        setRole(await getRole())
+      } catch {
+        setRole(null)
+      } finally {
+        setReady(true)
+      }
+    })()
   }, [])
   if (!ready) return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
+  if (role === null) return <Navigate to="/login" replace />
   if (role !== 'partner') return <Navigate to="/owner/dashboard" replace />
   return children
 }
