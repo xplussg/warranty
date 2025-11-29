@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { searchWarranties, deleteWarranty, claimWarranty, unclaimWarranty, uploadWarranties } from '../lib/api'
+import { searchWarranties, deleteWarranty, claimWarranty, unclaimWarranty } from '../lib/api'
 import { getRole } from '../lib/auth'
 
 export default function AdminWarranties() {
@@ -13,14 +13,7 @@ export default function AdminWarranties() {
 
   useEffect(() => { getRole().then(setRole) }, [])
 
-  async function onUpload(e: any) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setMessage('Uploading...')
-    const res: any = await uploadWarranties(file)
-    if (res?.error) setMessage(res.error)
-    else { setMessage(`Uploaded ${res.count} rows`); await refresh() }
-  }
+  // upload hidden
   
 
   async function refresh() {
@@ -90,12 +83,6 @@ export default function AdminWarranties() {
       
       <div className="flex items-center gap-3 mb-3 justify-between">
         <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Search" value={q} onChange={e => setQ(e.target.value)} />
-        {role !== 'partner' && (
-          <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-md border border-slate-300 text-sm">
-            Upload CSV
-            <input type="file" className="hidden" accept=".csv" onChange={onUpload} />
-          </label>
-        )}
       </div>
       
       
