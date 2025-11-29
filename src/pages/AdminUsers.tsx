@@ -8,6 +8,7 @@ export default function AdminUsers() {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
+  const [password, setPassword] = useState('')
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)
   const [createdUser, setCreatedUser] = useState<{ email: string, password: string } | null>(null)
   const [currentRole, setCurrentRole] = useState<string | null>(null)
@@ -22,7 +23,7 @@ export default function AdminUsers() {
     setMessage(null)
     setCreatedUser(null)
 
-    const res = await createPartner({ email, username })
+    const res = await createPartner({ email, username, password })
     setLoading(false)
 
     if (res.error) {
@@ -57,6 +58,17 @@ export default function AdminUsers() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="partner@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <input 
+                type="text"
+                required
+                className="form-input w-full" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Simple password"
               />
             </div>
             <div>

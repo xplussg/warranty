@@ -1,0 +1,23 @@
+name: Deploy .htaccess
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-htaccess:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload .htaccess
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: public/
+          server-dir: /
+          exclude: |
+            **
+          include: |
+            .htaccess

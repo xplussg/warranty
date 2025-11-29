@@ -85,7 +85,7 @@ export default function App() {
           border-color: var(--red-primary);
           box-shadow: 0 0 0 4px var(--red-light);
         }
-        .app-theme button:not(.btn-submit) {
+        .app-theme button:not(.btn-submit):not(.toggle-btn) {
           background: #FFFFFF;
           color: var(--red-darkest);
           border: 1px solid #FFCDD2;
@@ -95,7 +95,7 @@ export default function App() {
           cursor: pointer;
           transition: all 0.2s ease;
         }
-        .app-theme button:hover:not(.btn-submit) { background: var(--red-light); border-color: var(--red-primary); }
+        .app-theme button:hover:not(.btn-submit):not(.toggle-btn) { background: var(--red-light); border-color: var(--red-primary); }
       `}</style>
       <Header />
       <main className="flex-1">
@@ -112,7 +112,7 @@ export default function App() {
           <Route path="/partner/warranties" element={<PrivateRoute><PartnerRoute><AdminWarranties /></PartnerRoute></PrivateRoute>} />
           <Route path="/owner/dashboard" element={<PrivateRoute><OwnerRoute><AdminDashboard /></OwnerRoute></PrivateRoute>} />
           <Route path="/partner/dashboard" element={<PrivateRoute><PartnerRoute><PartnerDashboard /></PartnerRoute></PrivateRoute>} />
-          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/change-password" element={<PrivateRoute><OwnerRoute><ChangePassword /></OwnerRoute></PrivateRoute>} />
         </Routes>
       </main>
       <Footer />

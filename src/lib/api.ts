@@ -293,7 +293,7 @@ function mapWarranty(r: any) {
   }
 }
 
-export async function createPartner(data: { email: string; username: string }) {
+export async function createPartner(data: { email: string; username: string; password?: string }) {
   const { data: result, error } = await supabase.functions.invoke('create-partner', {
     body: data
   })

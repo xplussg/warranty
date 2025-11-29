@@ -9,10 +9,6 @@ export default function PartnerDashboard() {
           <div className="font-semibold">Warranties</div>
           <div className="text-sm text-slate-600">Search by name, email or phone and claim</div>
         </Link>
-        <Link to="/change-password" className="rounded-md border border-slate-200 p-4 hover:border-brand">
-          <div className="font-semibold">Change Password</div>
-          <div className="text-sm text-slate-600">Update your account password</div>
-        </Link>
       </div>
     </section>
   )

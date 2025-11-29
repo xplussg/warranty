@@ -74,13 +74,42 @@ export default function WarrantyRegister() {
   const [showSerialHelp, setShowSerialHelp] = useState(false)
 
   const productOptions: Record<string, string[]> = {
-    'Casing': ['Dream Case', 'uCase', 'Buffer Case MagSafe', 'Buffer Case'],
-    'DIY X-Buffer': ['DIY Armorvisor', 'DIY Extreme 9H', 'DIY Extreme 7H', 'DIY Extreme AR', 'DIY Extreme Matte', 'DIY Privacy Clear', 'DIY Privacy Matte', 'DIY Eyesafe'],
-    'UV Nano Glass (Red)': ['UV Nano Glass (Red) - Clear Type', 'UV Nano Glass (Red) - Matte Type'],
-    'Anti-Shock (Gold)': ['Anti-Shock (Gold) - Clear Type'],
-    'Anti-Peeping (Blue)': ['Anti-Peeping (Blue) - Privacy Type'],
-    'X-Buffer Series': ['X-Buffer Clear', 'X-Buffer Matte', 'X-Buffer 180 Privacy', 'X-Buffer 360 Privacy', 'X-Buffer Pro Armorvisor', 'X-Fold', 'X-Paper'],
-    'Accessories': ['Camera Lens', 'Eyesafe']
+    'DIY X-Buffer': [
+      'DIY Armorvisor',
+      'DIY Extreme 9H',
+      'DIY Extreme 7H',
+      'DIY Extreme AR',
+      'DIY Extreme Matte',
+      'DIY Privacy Clear',
+      'DIY Privacy Matte',
+      'DIY Eyesafe'
+    ],
+    'DIY X-Plus': [
+      'UV Nano AF Clear',
+      'UV Nano Matte',
+      'UV Privacy Matte',
+      'Anti-Shock Gold',
+      'X-Fold',
+      'X-Tablet',
+      'X-Paper'
+    ],
+    'X-Plus X-Buffer': [
+      'X-Buffer Clear',
+      'X-Buffer Matte',
+      'X-Buffer Pro Armorvisor',
+      'X-Buffer 180 Privacy',
+      'X-Buffer 360 Privacy',
+      'X-Buffer Eyesafe'
+    ],
+    'X-Plus Casing': [
+      'Buffer Case',
+      'Buffer Case MagSafe',
+      'uCase MagSafe',
+      'Dream Case'
+    ],
+    'X-Plus Accessories': [
+      'X-Lens'
+    ]
   }
   const availableProducts = productCategory ? (productOptions[productCategory] || []) : []
 

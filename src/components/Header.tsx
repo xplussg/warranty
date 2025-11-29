@@ -43,7 +43,7 @@ export default function Header() {
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <NavLink to={role === 'partner' ? '/partner/dashboard' : '/owner/dashboard'} onClick={() => setOpen(false)} className={({ isActive }) => clsx('py-2 text-sm', isActive ? 'text-[#D32F2F]' : 'text-[#6B6B6B] hover:text-[#D32F2F]')}>Dashboard</NavLink>
               <span className="text-sm text-[#6B6B6B] py-2 md:py-0">{String(user.email)}</span>
-              <button className="text-sm text-[#6B6B6B] hover:text-[#D32F2F] text-left md:text-center py-2 md:py-0" onClick={async () => { setOpen(false); await logout(); location.href = '/login' }}>Logout</button>
+              <button className="text-sm text-[#6B6B6B] hover:text-[#D32F2F] text-left md:text-center py-2 md:py-0" onClick={async () => { try { setOpen(false); await logout(); window.location.replace('/login') } catch { window.location.replace('/login') } }}>Logout</button>
             </div>
           ) : (
             <NavLink to="/login" onClick={() => setOpen(false)} className={({ isActive }) => clsx('py-2 text-sm', isActive ? 'text-[#D32F2F]' : 'text-[#6B6B6B] hover:text-[#D32F2F]')}>Login</NavLink>

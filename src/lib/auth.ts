@@ -1,6 +1,18 @@
 import { supabase } from './supabase'
 
-export async function login(email: string, password: string) {
+export async function login(emailOrUsername: string, password: string) {
+  let email = emailOrUsername
+  if (!emailOrUsername.includes('@')) {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('resolve-username', {
+        body: { username: emailOrUsername }
+      })
+      if (error) throw error
+      if (result?.email) email = result.email
+    } catch (err) {
+      throw new Error('Invalid username or email')
+    }
+  }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
   return data
@@ -12,7 +24,7 @@ export async function me() {
 }
 
 export async function logout() {
-  await supabase.auth.signOut()
+  await supabase.auth.signOut({ scope: 'global' } as any)
 }
 
 export async function getSessionToken() {

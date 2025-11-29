@@ -44,7 +44,7 @@ serve(async (req) => {
       Deno.env.get('SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { email, username } = await req.json()
+    const { email, username, password: suppliedPassword } = await req.json()
     if (!email || !username) {
       return new Response(JSON.stringify({ error: 'Email and username are required' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -52,8 +52,10 @@ serve(async (req) => {
       })
     }
 
-    // Generate random password
-    const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8)
+    // Use supplied password or generate one
+    const password = suppliedPassword && String(suppliedPassword).length >= 4
+      ? String(suppliedPassword)
+      : (Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8))
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
