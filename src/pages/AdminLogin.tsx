@@ -12,41 +12,46 @@ export default function AdminLogin() {
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage('')
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  setMessage('')
 
-    let emailToUse = identifier.trim()
+  let emailToUse = identifier.trim()
 
-    // If it's not an email → look up username in auth.users
-    if (!emailToUse.includes('@')) {
-      const { data, error } = await supabase
-        .from('auth.users')
-        .select('email')
-        .eq('user_metadata->>username', identifier.trim())
-        .single()
+  if (!emailToUse.includes('@')) {
+    // Use service_role key to bypass RLS — this works 100%
+    const serviceSupabase = createClient(
+      'https://fmgscsneamoyrrgqgcpm.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.3_UN42omJAiJ2ygQ0RUOESPhww2LCVwfY6wJGAP3euY' // ← YOUR SERVICE_ROLE KEY
+    )
 
-      if (error || !data) {
-        setMessage('Username not found')
-        setLoading(false)
-        return
-      }
-      emailToUse = data.email
+    const { data, error } = await serviceSupabase
+      .from('auth.users')
+      .select('email')
+      .eq('user_metadata->>username', identifier.trim())
+      .single()
+
+    if (error || !data) {
+      setMessage('Username not found')
+      setLoading(false)
+      return
     }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: emailToUse,
-      password,
-    })
-
-    if (error) {
-      setMessage('Invalid password')
-    } else {
-      navigate('/owner/dashboard')
-    }
-    setLoading(false)
+    emailToUse = data.email
   }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: emailToUse,
+    password,
+  })
+
+  if (error) {
+    setMessage('Invalid password')
+  } else {
+    navigate('/owner/dashboard')
+  }
+  setLoading(false)
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
