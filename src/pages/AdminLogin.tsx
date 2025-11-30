@@ -19,7 +19,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
   let emailToUse = identifier.trim()
 
-  // If no @ → treat as username and look up email directly from auth.users
+  // If it's not an email → look up username directly in auth.users
   if (!emailToUse.includes('@')) {
     const { data, error } = await supabase
       .from('auth.users')
@@ -36,7 +36,7 @@ const handleLogin = async (e: React.FormEvent) => {
     emailToUse = data.email
   }
 
-  // Normal login with email
+  // Normal login
   const { error } = await supabase.auth.signInWithPassword({
     email: emailToUse,
     password,
@@ -47,7 +47,6 @@ const handleLogin = async (e: React.FormEvent) => {
   } else {
     navigate('/owner/dashboard')
   }
-
   setLoading(false)
 }
 
