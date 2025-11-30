@@ -7,13 +7,6 @@ serve(async (req) => {
     Deno.env.get('SERVICE_ROLE_KEY')!
   )
 
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') ||
-                req.headers.get('apikey')
-
-  if (!token) {
-    return new Response(JSON.stringify({ error: 'Missing auth' }), { status: 401 })
-  }
-
   const { username } = await req.json()
 
   const { data } = await supabase
