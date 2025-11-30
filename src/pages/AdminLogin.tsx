@@ -19,24 +19,22 @@ const handleLogin = async (e: React.FormEvent) => {
 
   let emailToUse = identifier.trim()
 
+  // If it doesn't contain @ → treat as username
   if (!emailToUse.includes('@')) {
-    const res = await fetch('https://fmgscsneamoyrrgqgcpm.supabase.co/functions/v1/resolve-username-v2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,  // ← THIS LINE FIXES IT
-      },
-      body: JSON.stringify({ username: identifier.trim() })
-    })
+    // Direct query to auth.users — works because we have RLS allowing it
+    const { data, error } = await supabase
+      .from('auth.users')
+      .select('email')
+      .eq('user_metadata->>username', identifier.trim())
+      .single()
 
-    if (!res.ok) {
+    if (error || !data) {
       setMessage('Username not found')
       setLoading(false)
       return
     }
 
-    const { email } = await res.json()
-    emailToUse = email
+    emailToUse = data.email
   }
 
   const { error } = await supabase.auth.signInWithPassword({
