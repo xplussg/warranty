@@ -12,42 +12,45 @@ export default function AdminLogin() {
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage('')
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  setMessage('')
 
-    let emailToUse = identifier.trim()
+  let emailToUse = identifier.trim()
 
-    // If it's not an email → treat as username → look up real email
-    if (!emailToUse.includes('@')) {
-      const { data, error } = await supabase
-        .from('auth.users')
-        .select('email')
-        .eq('user_metadata->>username', identifier.trim())
-        .single()
-
-      if (error || !data) {
-        setMessage('Username not found')
-        setLoading(false)
-        return
-      }
-      emailToUse = data.email
-    }
-
-    // Normal login with real email
-    const { error } = await supabase.auth.signInWithPassword({
-      email: emailToUse,
-      password,
+  if (!emailToUse.includes('@')) {
+    const res = await fetch('https://fmgscsneamoyrrgqgcpm.supabase.co/functions/v1/resolve-username', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,  // ← THIS LINE FIXES IT
+      },
+      body: JSON.stringify({ username: identifier.trim() })
     })
 
-    if (error) {
-      setMessage('Invalid password')
-    } else {
-      navigate('/owner/dashboard')
+    if (!res.ok) {
+      setMessage('Username not found')
+      setLoading(false)
+      return
     }
-    setLoading(false)
+
+    const { email } = await res.json()
+    emailToUse = email
   }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: emailToUse,
+    password,
+  })
+
+  if (error) {
+    setMessage('Invalid password')
+  } else {
+    navigate('/owner/dashboard')
+  }
+  setLoading(false)
+}
 
   return (
     // ← your beautiful existing JSX stays exactly the same
