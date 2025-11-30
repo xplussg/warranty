@@ -19,28 +19,24 @@ const handleLogin = async (e: React.FormEvent) => {
 
   let emailToUse = identifier.trim()
 
+  // If no @ → treat as username and look up email directly from auth.users
   if (!emailToUse.includes('@')) {
-    // Resolve username using Edge Function with apikey
-    const res = await fetch('https://fmgscsneamoyrrgqgcpm.supabase.co/functions/v1/resolve-username', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,  // ← THIS LINE FIXES EVERYTHING
-      },
-      body: JSON.stringify({ username: identifier.trim() })
-    })
+    const { data, error } = await supabase
+      .from('auth.users')
+      .select('email')
+      .eq('user_metadata->>username', identifier.trim())
+      .single()
 
-    if (!res.ok) {
-      const err = await res.json()
-      setMessage(err.error || 'Username not found')
+    if (error || !data) {
+      setMessage('Username not found')
       setLoading(false)
       return
     }
 
-    const { email } = await res.json()
-    emailToUse = email
+    emailToUse = data.email
   }
 
+  // Normal login with email
   const { error } = await supabase.auth.signInWithPassword({
     email: emailToUse,
     password,
@@ -51,6 +47,7 @@ const handleLogin = async (e: React.FormEvent) => {
   } else {
     navigate('/owner/dashboard')
   }
+
   setLoading(false)
 }
 
