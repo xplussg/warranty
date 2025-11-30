@@ -5,6 +5,14 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+
+    /* ←←← THESE 3 LINES ARE THE FIX →→→ */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    /* ←←← END OF FIX →→→ */
+
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "noEmit": true,
