@@ -3,55 +3,55 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNavigate } from 'react-router-dom'
+import { createClient } from '@supabase/supabase-js'  // ← THIS LINE WAS MISSING
 
 export default function AdminLogin() {
-  const [identifier, setIdentifier] = useState('') // username OR email
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setLoading(true)
-  setMessage('')
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
 
-  let emailToUse = identifier.trim()
+    let emailToUse = identifier.trim()
 
-  if (!emailToUse.includes('@')) {
-    // Use service_role key to bypass RLS — this works 100%
-    const serviceSupabase = createClient(
-      'https://fmgscsneamoyrrgqgcpm.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.3_UN42omJAiJ2ygQ0RUOESPhww2LCVwfY6wJGAP3euY' // ← YOUR SERVICE_ROLE KEY
-    )
+    if (!emailToUse.includes('@')) {
+      const serviceSupabase = createClient(
+        'https://fmgscsneamoyrrgqgcpm.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.3_UN42omJAiJ2ygQ0RUOESPhww2LCVwfY6wJGAP3euY' // ← your real service_role key
+      )
 
-    const { data, error } = await serviceSupabase
-      .from('auth.users')
-      .select('email')
-      .eq('user_metadata->>username', identifier.trim())
-      .single()
+      const { data, error } = await serviceSupabase
+        .from('auth.users')
+        .select('email')
+        .eq('user_metadata->>username', identifier.trim())
+        .single()
 
-    if (error || !data) {
-      setMessage('Username not found')
-      setLoading(false)
-      return
+      if (error || !data) {
+        setMessage('Username not found')
+        setLoading(false)
+        return
+      }
+      emailToUse = data.email
     }
-    emailToUse = data.email
-  }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: emailToUse,
-    password,
-  })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailToUse,
+      password,
+    })
 
-  if (error) {
-    setMessage('Invalid password')
-  } else {
-    navigate('/owner/dashboard')
+    if (error) {
+      setMessage('Invalid password')
+    } else {
+      navigate('/owner/dashboard')
+    }
+    setLoading(false)
   }
-  setLoading(false)
-}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
