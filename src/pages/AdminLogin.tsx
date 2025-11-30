@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import { createClient } from '@supabase/supabase-js'  // ← THIS LINE WAS MISSING
 
 export default function AdminLogin() {
   const [identifier, setIdentifier] = useState('')
@@ -20,13 +19,9 @@ export default function AdminLogin() {
 
     let emailToUse = identifier.trim()
 
+    // If not email → look up username directly in auth.users
     if (!emailToUse.includes('@')) {
-      const serviceSupabase = createClient(
-        'https://fmgscsneamoyrrgqgcpm.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.3_UN42omJAiJ2ygQ0RUOESPhww2LCVwfY6wJGAP3euY' // ← your real service_role key
-      )
-
-      const { data, error } = await serviceSupabase
+      const { data, error } = await supabase
         .from('auth.users')
         .select('email')
         .eq('user_metadata->>username', identifier.trim())
