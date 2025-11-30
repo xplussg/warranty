@@ -20,7 +20,7 @@ const handleLogin = async (e: React.FormEvent) => {
   let emailToUse = identifier.trim()
 
   if (!emailToUse.includes('@')) {
-    const res = await fetch('https://fmgscsneamoyrrgqgcpm.supabase.co/functions/v1/resolve-username', {
+    const res = await fetch('https://fmgscsneamoyrrgqgcpm.supabase.co/functions/v1/resolve-username-v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
