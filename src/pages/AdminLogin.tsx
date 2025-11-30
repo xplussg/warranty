@@ -25,13 +25,10 @@ const handleLogin = async (e: React.FormEvent) => {
     const token = session?.access_token
 
     const res = await fetch('https://fmgscsneamoyrrgqgcpm.supabase.co/functions/v1/resolve-username', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ username: identifier.trim() })
-    })
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: identifier.trim() })
+})
 
     if (!res.ok) {
       setMessage('Username not found')
