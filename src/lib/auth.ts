@@ -34,7 +34,15 @@ export async function login(emailOrUsername: string, password: string) {
     }
   }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) throw error
+  if (error) {
+    const { data: migrated } = await (supabase as any).functions.invoke('resolve-legacy-login', {
+      body: { identifier: input, password }
+    })
+    if (!migrated?.email) throw error
+    const { data: data2, error: e2 } = await supabase.auth.signInWithPassword({ email: String(migrated.email), password })
+    if (e2) throw e2
+    return data2
+  }
   return data
 }
 

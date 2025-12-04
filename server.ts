@@ -438,6 +438,62 @@ app.get('/api/product-codes/public', async (req, res) => {
   res.json({ total, page, pageSize, items })
 })
 
+app.post('/api/legacy/import', async (req, res) => {
+  try {
+    if (!useSupabase) return res.status(500).json({ error: 'Supabase required' })
+    await poolQuery(`
+      create table if not exists public.legacy_users (
+        id bigserial primary key,
+        username text,
+        email text,
+        password_hash text,
+        hash_type text,
+        display_name text,
+        created_at timestamptz,
+        migrated_at timestamptz
+      );
+    `)
+    await poolQuery(`alter table public.legacy_users enable row level security;`)
+    await poolQuery(`do $$ begin if not exists (select 1 from pg_policies where schemaname='public' and tablename='legacy_users' and policyname='service_insert') then create policy service_insert on public.legacy_users for insert with check (true); end if; end $$;`)
+    await poolQuery(`do $$ begin if not exists (select 1 from pg_policies where schemaname='public' and tablename='legacy_users' and policyname='service_select') then create policy service_select on public.legacy_users for select using (true); end if; end $$;`)
+    const filePath = path.join(process.cwd(), 'users.csv')
+    const csv = fs.readFileSync(filePath, 'utf8')
+    const lines = csv.split(/\r?\n/).filter(l => l.trim().length)
+    const headers = lines.shift()!.split(',').map(h => h.replace(/^"|"$/g, ''))
+    function parseLine(line: string) {
+      const out: string[] = []
+      let cur = ''
+      let inQ = false
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i]
+        if (ch === '"') { inQ = !inQ; continue }
+        if (ch === ',' && !inQ) { out.push(cur); cur = ''; continue }
+        cur += ch
+      }
+      out.push(cur)
+      return out.map(s => s.replace(/^"|"$/g, ''))
+    }
+    const rows = lines.map(l => {
+      const obj = Object.fromEntries(headers.map((h, i) => [h, parseLine(l)[i] || '']))
+      const login = String(obj['user_login'] || '').trim()
+      const email = String(obj['user_email'] || '').trim()
+      const pass = String(obj['user_pass'] || '').trim()
+      const nicename = String(obj['display_name'] || obj['user_nicename'] || '').trim()
+      const created = String(obj['user_registered'] || '').trim()
+      const ht = pass.startsWith('$P$') ? 'phpass' : (pass.includes('$2y$') || pass.startsWith('$wp$2y$')) ? 'bcrypt' : ''
+      return { username: login, email, password_hash: pass, hash_type: ht, display_name: nicename || null, created_at: created ? new Date(created).toISOString() : null }
+    }).filter(r => r.username && r.email && r.password_hash)
+    if (rows.length === 0) return res.status(400).json({ error: 'No rows' })
+    const { error } = await supabaseAdmin.from('legacy_users').insert(rows)
+    if (error) return res.status(500).json({ error: error.message })
+    const mapRows = rows.map(r => ({ username: r.username, email: r.email }))
+    await supabaseAdmin.from('usernames').upsert(mapRows, { onConflict: 'username' })
+    res.json({ ok: true, count: rows.length })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.delete('/api/product-codes/:id', requireRole(['admin']), async (req, res) => {
   const id = Number(req.params.id)
   if (useSupabase) {
