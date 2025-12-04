@@ -2,13 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createClient } from '@supabase/supabase-js'
+import { createPartner } from '../lib/api'
+import { getRole } from '../lib/auth'
 
-// USE SERVICE_ROLE KEY DIRECTLY — THIS IS SAFE BECAUSE ONLY OWNERS CAN ACCESS THIS PAGE
-const supabase = createClient(
-  'https://fmgscsneamoyrrgqgcpm.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZ3Njc25lYW1veXJyZ3FnY3BtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mzg4MDYyOCwiZXhwIjoyMDc5NDU2NjI4fQ.3_UN42omJAiJ2ygQ0RUOESPhww2LCVwfY6wJGAP3euY' // ← YOUR REAL SERVICE_ROLE KEY HERE
-)
 
 export default function AdminUsers() {
   const navigate = useNavigate()
@@ -20,9 +16,7 @@ export default function AdminUsers() {
   const [currentRole, setCurrentRole] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentRole(user?.user_metadata?.role || null)
-    })
+    ;(async () => { setCurrentRole(await getRole()) })()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,8 +24,7 @@ export default function AdminUsers() {
     setLoading(true)
     setMessage(null)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const role = user?.user_metadata?.role?.toLowerCase()
+    const role = ((await getRole()) || '').toLowerCase()
 
     if (!['owner', 'admin'].includes(role)) {
       setMessage({ text: 'Only owners can create partners', type: 'error' })
@@ -39,17 +32,12 @@ export default function AdminUsers() {
       return
     }
 
-    const { error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { username, role: 'partner' }
-    })
+    const r = await createPartner({ email, username, password })
 
     setLoading(false)
 
-    if (error) {
-      setMessage({ text: error.message, type: 'error' })
+    if ((r as any)?.error) {
+      setMessage({ text: String((r as any).error), type: 'error' })
     } else {
       setMessage({ text: 'Partner created successfully!', type: 'success' })
       setEmail('')

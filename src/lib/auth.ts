@@ -1,15 +1,37 @@
 import { supabase } from './supabase'
 
 export async function login(emailOrUsername: string, password: string) {
-  let email = emailOrUsername
-  if (!emailOrUsername.includes('@')) {
+  const input = String(emailOrUsername || '').trim()
+  let email = input
+  if (!input.includes('@')) {
     const { data, error } = await supabase
       .from('usernames')
       .select('email')
-      .eq('username', emailOrUsername)
+      .ilike('username', input)
       .maybeSingle()
-    if (error || !data?.email) throw new Error('Invalid username or email')
-    email = String(data.email)
+    if (!error && data?.email) {
+      email = String(data.email)
+    } else {
+      const { data: result } = await (supabase as any).functions.invoke('resolve-username', {
+        body: { username: input }
+      })
+      if (result?.email) {
+        email = String(result.email)
+      } else {
+        const env = (import.meta as any).env || {}
+        const base = env.VITE_SUPABASE_URL
+        const anon = env.VITE_SUPABASE_ANON_KEY
+        const res = await fetch(`${base}/functions/v1/resolve-username`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': anon },
+          body: JSON.stringify({ username: input })
+        })
+        if (!res.ok) throw new Error('Invalid username or email')
+        const j = await res.json()
+        if (!j?.email) throw new Error('Invalid username or email')
+        email = String(j.email)
+      }
+    }
   }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
