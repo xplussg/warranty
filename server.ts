@@ -441,21 +441,6 @@ app.get('/api/product-codes/public', async (req, res) => {
 app.post('/api/legacy/import', async (req, res) => {
   try {
     if (!useSupabase) return res.status(500).json({ error: 'Supabase required' })
-    await poolQuery(`
-      create table if not exists public.legacy_users (
-        id bigserial primary key,
-        username text,
-        email text,
-        password_hash text,
-        hash_type text,
-        display_name text,
-        created_at timestamptz,
-        migrated_at timestamptz
-      );
-    `)
-    await poolQuery(`alter table public.legacy_users enable row level security;`)
-    await poolQuery(`do $$ begin if not exists (select 1 from pg_policies where schemaname='public' and tablename='legacy_users' and policyname='service_insert') then create policy service_insert on public.legacy_users for insert with check (true); end if; end $$;`)
-    await poolQuery(`do $$ begin if not exists (select 1 from pg_policies where schemaname='public' and tablename='legacy_users' and policyname='service_select') then create policy service_select on public.legacy_users for select using (true); end if; end $$;`)
     const filePath = path.join(process.cwd(), 'users.csv')
     const csv = fs.readFileSync(filePath, 'utf8')
     const lines = csv.split(/\r?\n/).filter(l => l.trim().length)

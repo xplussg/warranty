@@ -67,7 +67,7 @@ serve(async (req) => {
     const hh = String(row.password_hash || '')
     let ok = false
     if (ht === 'bcrypt') {
-      const h = hh.replace('$wp$2y$', '$2y$')
+      const h = hh.replace('$wp$2y$', '$2y$').replace('$2b$', '$2y$').replace('$2a$', '$2y$')
       ok = await compare(password, h)
     } else if (ht === 'phpass') {
       ok = await phpassCheck(password, hh)
