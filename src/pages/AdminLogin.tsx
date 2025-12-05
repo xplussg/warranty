@@ -57,11 +57,11 @@ export default function AdminLogin() {
           <form onSubmit={onSubmit}>
             <div className="form-group">
               <label className="form-label" htmlFor="email">Email or Username</label>
-              <input id="email" type="text" className="form-input" value={email} onChange={e => setEmail(e.target.value)} />
+              <input id="email" type="text" className="form-input" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div className="form-group input-with-toggle">
               <label className="form-label" htmlFor="password">Password</label>
-              <input id="password" type={show ? 'text' : 'password'} className="form-input" value={password} onChange={e => setPassword(e.target.value)} />
+              <input id="password" type={show ? 'text' : 'password'} className="form-input" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
               <button type="button" className="toggle-btn" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide password' : 'Show password'}>
                 {show ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-7 0-11 8-11 8s4 8 11 8 11-8 11-8-4-8-11-8zm0 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/><rect x="5" y="11" width="14" height="2" transform="rotate(45 12 12)" /></svg>

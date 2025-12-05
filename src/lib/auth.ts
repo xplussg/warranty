@@ -40,11 +40,25 @@ export async function login(emailOrUsername: string, password: string) {
   if (error) {
     const env = (import.meta as any).env || {}
     const anon = env.VITE_SUPABASE_ANON_KEY
-    const { data: migrated } = await (supabase as any).functions.invoke('resolve-legacy-login', {
-      headers: { Authorization: `Bearer ${anon}`, apikey: anon },
-      body: { identifier: input, password }
-    })
-    let migratedEmail = migrated?.email as string | undefined
+    let migratedEmail: string | undefined
+    try {
+      const resLocal = await fetch(`/api/legacy/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: input, password })
+      })
+      if (resLocal.ok) {
+        const j = await resLocal.json()
+        if (j?.email) migratedEmail = String(j.email)
+      }
+    } catch {}
+    if (!migratedEmail) {
+      const { data: migrated } = await (supabase as any).functions.invoke('resolve-legacy-login', {
+        headers: { Authorization: `Bearer ${anon}`, apikey: anon },
+        body: { identifier: input, password }
+      })
+      migratedEmail = migrated?.email as string | undefined
+    }
     if (!migratedEmail) {
       const base = env.VITE_SUPABASE_URL
       const ref = String(base).replace(/^https?:\/\/([^\.]+).*$/, '$1')
