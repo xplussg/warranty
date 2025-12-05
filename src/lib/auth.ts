@@ -22,7 +22,9 @@ export async function login(emailOrUsername: string, password: string) {
         email = String(result.email)
       } else {
         const base = env.VITE_SUPABASE_URL
-        const res = await fetch(`${base}/functions/v1/resolve-username`, {
+        const ref = String(base).replace(/^https?:\/\/([^\.]+).*$/, '$1')
+        const fnBase = `https://${ref}.functions.supabase.co`
+        const res = await fetch(`${fnBase}/resolve-username?apikey=${anon}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anon}`, 'apikey': anon },
           body: JSON.stringify({ username: input })
@@ -45,7 +47,9 @@ export async function login(emailOrUsername: string, password: string) {
     let migratedEmail = migrated?.email as string | undefined
     if (!migratedEmail) {
       const base = env.VITE_SUPABASE_URL
-      const res = await fetch(`${base}/functions/v1/resolve-legacy-login?apikey=${anon}`, {
+      const ref = String(base).replace(/^https?:\/\/([^\.]+).*$/, '$1')
+      const fnBase = `https://${ref}.functions.supabase.co`
+      const res = await fetch(`${fnBase}/resolve-legacy-login?apikey=${anon}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anon}` },
         body: JSON.stringify({ identifier: input, password })
