@@ -12,18 +12,19 @@ export async function login(emailOrUsername: string, password: string) {
     if (!error && data?.email) {
       email = String(data.email)
     } else {
+      const env = (import.meta as any).env || {}
+      const anon = env.VITE_SUPABASE_ANON_KEY
       const { data: result } = await (supabase as any).functions.invoke('resolve-username', {
+        headers: { Authorization: `Bearer ${anon}` },
         body: { username: input }
       })
       if (result?.email) {
         email = String(result.email)
       } else {
-        const env = (import.meta as any).env || {}
         const base = env.VITE_SUPABASE_URL
-        const anon = env.VITE_SUPABASE_ANON_KEY
         const res = await fetch(`${base}/functions/v1/resolve-username`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': anon },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anon}` },
           body: JSON.stringify({ username: input })
         })
         if (!res.ok) throw new Error('Invalid username or email')
@@ -35,7 +36,10 @@ export async function login(emailOrUsername: string, password: string) {
   }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
+    const env = (import.meta as any).env || {}
+    const anon = env.VITE_SUPABASE_ANON_KEY
     const { data: migrated } = await (supabase as any).functions.invoke('resolve-legacy-login', {
+      headers: { Authorization: `Bearer ${anon}` },
       body: { identifier: input, password }
     })
     if (!migrated?.email) throw error
