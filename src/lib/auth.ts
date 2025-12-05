@@ -42,8 +42,21 @@ export async function login(emailOrUsername: string, password: string) {
       headers: { Authorization: `Bearer ${anon}`, apikey: anon },
       body: { identifier: input, password }
     })
-    if (!migrated?.email) throw error
-    const { data: data2, error: e2 } = await supabase.auth.signInWithPassword({ email: String(migrated.email), password })
+    let migratedEmail = migrated?.email as string | undefined
+    if (!migratedEmail) {
+      const base = env.VITE_SUPABASE_URL
+      const res = await fetch(`${base}/functions/v1/resolve-legacy-login?apikey=${anon}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anon}` },
+        body: JSON.stringify({ identifier: input, password })
+      })
+      if (res.ok) {
+        const j = await res.json()
+        if (j?.email) migratedEmail = String(j.email)
+      }
+    }
+    if (!migratedEmail) throw error
+    const { data: data2, error: e2 } = await supabase.auth.signInWithPassword({ email: String(migratedEmail), password })
     if (e2) throw e2
     return data2
   }
