@@ -15,8 +15,10 @@ serve(async (req) => {
     const key = Deno.env.get('SERVICE_ROLE_KEY')
     const supabase = createClient(url!, key!)
 
-    const headerKey = req.headers.get('apikey') || ''
-    let canAdmin = headerKey === key
+    const headerKey = (req.headers.get('apikey') || '').trim()
+    const authHeader = (req.headers.get('Authorization') || '').trim()
+    const bearer = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7).trim() : authHeader
+    let canAdmin = headerKey && key && headerKey === key || (bearer && key && bearer === key)
 
     if (!canAdmin) {
       const token = req.headers.get('Authorization')?.replace('Bearer ', '')
