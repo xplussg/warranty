@@ -12,21 +12,18 @@ export async function login(emailOrUsername: string, password: string) {
     if (!error && data?.email) {
       email = String(data.email)
     } else {
-      const env = (import.meta as any).env || {}
-      const anon = env.VITE_SUPABASE_ANON_KEY
       const { data: result } = await (supabase as any).functions.invoke('resolve-username', {
-        headers: { Authorization: `Bearer ${anon}`, apikey: anon },
         body: { username: input }
       })
       if (result?.email) {
         email = String(result.email)
       } else {
+        const env = (import.meta as any).env || {}
         const base = env.VITE_SUPABASE_URL
-        const ref = String(base).replace(/^https?:\/\/([^\.]+).*$/, '$1')
-        const fnBase = `https://${ref}.functions.supabase.co`
-        const res = await fetch(`${fnBase}/resolve-username?apikey=${anon}`, {
+        const anon = env.VITE_SUPABASE_ANON_KEY
+        const res = await fetch(`${base}/functions/v1/resolve-username`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anon}`, 'apikey': anon },
+          headers: { 'Content-Type': 'application/json', 'apikey': anon },
           body: JSON.stringify({ username: input })
         })
         if (!res.ok) throw new Error('Invalid username or email')
@@ -38,43 +35,11 @@ export async function login(emailOrUsername: string, password: string) {
   }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
-    const env = (import.meta as any).env || {}
-    const anon = env.VITE_SUPABASE_ANON_KEY
-    let migratedEmail: string | undefined
-    try {
-      const resLocal = await fetch(`/api/legacy/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: input, password })
-      })
-      if (resLocal.ok) {
-        const j = await resLocal.json()
-        if (j?.email) migratedEmail = String(j.email)
-      }
-    } catch {}
-    if (!migratedEmail) {
-      const { data: migrated } = await (supabase as any).functions.invoke('resolve-legacy-login', {
-        headers: { Authorization: `Bearer ${anon}`, apikey: anon },
-        body: { identifier: input, password }
-      })
-      migratedEmail = migrated?.email as string | undefined
-    }
-    if (!migratedEmail) {
-      const base = env.VITE_SUPABASE_URL
-      const ref = String(base).replace(/^https?:\/\/([^\.]+).*$/, '$1')
-      const fnBase = `https://${ref}.functions.supabase.co`
-      const res = await fetch(`${fnBase}/resolve-legacy-login?apikey=${anon}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anon}` },
-        body: JSON.stringify({ identifier: input, password })
-      })
-      if (res.ok) {
-        const j = await res.json()
-        if (j?.email) migratedEmail = String(j.email)
-      }
-    }
-    if (!migratedEmail) throw error
-    const { data: data2, error: e2 } = await supabase.auth.signInWithPassword({ email: String(migratedEmail), password })
+    const { data: migrated } = await (supabase as any).functions.invoke('resolve-legacy-login', {
+      body: { identifier: input, password }
+    })
+    if (!migrated?.email) throw error
+    const { data: data2, error: e2 } = await supabase.auth.signInWithPassword({ email: String(migrated.email), password })
     if (e2) throw e2
     return data2
   }

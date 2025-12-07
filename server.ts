@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 // Removed legacy JWT/bcrypt auth
 import pg from 'pg'
+import bcryptjs from 'bcryptjs'
 
 type ProductCode = { code: string; productType: string }
 type ProductCodeRec = { id: number; code: string; productType: string; createdAt: string }
@@ -476,6 +477,90 @@ app.post('/api/legacy/import', async (req, res) => {
     res.json({ ok: true, count: rows.length })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
+  }
+})
+
+function phpassItoa64() { return "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" }
+function phpassEncode64(input: Uint8Array, count: number) {
+  const itoa64 = phpassItoa64()
+  let output = ''
+  let i = 0
+  while (i < count) {
+    let value = input[i++]
+    output += itoa64[value & 0x3f]
+    if (i < count) value |= input[i] << 8
+    output += itoa64[(value >> 6) & 0x3f]
+    if (++i >= count) break
+    if (i < count) value |= input[i] << 16
+    output += itoa64[(value >> 12) & 0x3f]
+    if (++i >= count) break
+    output += itoa64[(value >> 18) & 0x3f]
+  }
+  return output
+}
+async function md5Raw(data: Uint8Array) {
+  const buf = await crypto.subtle.digest('MD5', data)
+  return new Uint8Array(buf)
+}
+async function phpassCheck(pass: string, hash: string) {
+  if (!hash.startsWith('$P$')) return false
+  const itoa64 = phpassItoa64()
+  const countLog2 = itoa64.indexOf(hash[3])
+  const count = 1 << countLog2
+  const salt = hash.substring(4, 12)
+  let h = await md5Raw(new TextEncoder().encode(salt + pass))
+  const passBytes = new TextEncoder().encode(pass)
+  for (let i = 0; i < count; i++) {
+    const combined = new Uint8Array(h.length + passBytes.length)
+    combined.set(h, 0)
+    combined.set(passBytes, h.length)
+    h = await md5Raw(combined)
+  }
+  const out = '$P$' + hash[3] + salt + phpassEncode64(h, 16)
+  return out === hash
+}
+
+app.post('/api/legacy/login', async (req, res) => {
+  try {
+    const identifier = String((req.body as any)?.identifier || '').trim()
+    const password = String((req.body as any)?.password || '')
+    if (!identifier || !password) return res.status(400).json({ error: 'invalid' })
+
+    let row: any = null
+    {
+      const { data } = await supabaseAdmin.from('legacy_users').select('username, email, password_hash, hash_type').eq('username', identifier).maybeSingle()
+      row = data || null
+    }
+    if (!row) {
+      const { data } = await supabaseAdmin.from('legacy_users').select('username, email, password_hash, hash_type').eq('email', identifier).maybeSingle()
+      row = data || null
+    }
+    if (!row) return res.status(404).json({ error: 'not found' })
+
+    const ht = String(row.hash_type || '')
+    const hh = String(row.password_hash || '')
+    let ok = false
+    if (ht === 'bcrypt') {
+      const h = hh.replace('$wp$2y$', '$2y$').replace('$2b$', '$2y$').replace('$2a$', '$2y$')
+      ok = bcryptjs.compareSync(password, h)
+    } else if (ht === 'phpass') {
+      ok = await phpassCheck(password, hh)
+    }
+    if (!ok) return res.status(401).json({ error: 'invalid credentials' })
+
+    const email = String(row.email)
+    const username = String(row.username)
+    const { data: exists } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 })
+    const already = (exists?.users || []).find(u => (u.email || '').toLowerCase() === email.toLowerCase())
+    if (!already) {
+      const { error: e2 } = await supabaseAdmin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { username, role: 'partner' } })
+      if (e2) return res.status(500).json({ error: e2.message })
+    }
+    await supabaseAdmin.from('usernames').upsert({ username, email }, { onConflict: 'username' })
+    await supabaseAdmin.from('legacy_users').update({ migrated_at: new Date().toISOString() }).or(`username.eq.${username},email.eq.${email}`)
+    res.json({ email })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Unknown' })
   }
 })
 

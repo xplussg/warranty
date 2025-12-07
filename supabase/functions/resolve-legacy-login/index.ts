@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { compare } from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
+import { compareSync } from "https://esm.sh/bcryptjs@2.4.3"
 
 const itoa64 = ".\/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 async function md5Raw(data: Uint8Array) {
@@ -55,12 +55,27 @@ serve(async (req) => {
 
     if (!identifier || !password) return new Response(JSON.stringify({ error: 'invalid' }), { status: 400, headers: cors })
 
-    const { data: row, error } = await supabase
-      .from('legacy_users')
-      .select('username, email, password_hash, hash_type')
-      .or(`username.ilike.${identifier},email.ilike.${identifier}`)
-      .maybeSingle()
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: cors })
+    let row: any = null
+    let err: any = null
+    {
+      const r1 = await supabase
+        .from('legacy_users')
+        .select('username, email, password_hash, hash_type')
+        .eq('username', identifier)
+        .maybeSingle()
+      err = r1.error
+      row = r1.data
+    }
+    if (!row) {
+      const r2 = await supabase
+        .from('legacy_users')
+        .select('username, email, password_hash, hash_type')
+        .eq('email', identifier)
+        .maybeSingle()
+      err = err || r2.error
+      row = r2.data
+    }
+    if (err) return new Response(JSON.stringify({ error: err.message }), { status: 400, headers: cors })
     if (!row) return new Response(JSON.stringify({ error: 'not found' }), { status: 404, headers: cors })
 
     const ht = String(row.hash_type || '')
@@ -68,7 +83,7 @@ serve(async (req) => {
     let ok = false
     if (ht === 'bcrypt') {
       const h = hh.replace('$wp$2y$', '$2y$').replace('$2b$', '$2y$').replace('$2a$', '$2y$')
-      ok = await compare(password, h)
+      ok = compareSync(password, h)
     } else if (ht === 'phpass') {
       ok = await phpassCheck(password, hh)
     }

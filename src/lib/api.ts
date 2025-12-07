@@ -309,3 +309,10 @@ export async function createPartner(data: { email: string; username: string; pas
   
   return { ok: true, user: result.user, password: result.password }
 }
+
+export async function setUserRole(data: { email: string; role: 'owner' | 'partner' | 'admin'; username?: string }) {
+  const { data: result, error } = await supabase.functions.invoke('set-user-role', { body: data })
+  if (error) return { error: error.message }
+  if ((result as any)?.error) return { error: (result as any).error }
+  return { ok: true }
+}
