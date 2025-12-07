@@ -15,11 +15,18 @@ serve(async (req) => {
     const key = Deno.env.get('SERVICE_ROLE_KEY')
     const supabase = createClient(url!, key!)
 
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '')
-    const { data: { user } } = await supabase.auth.getUser(token)
-    const role = (user?.user_metadata?.role || '').toString().toLowerCase()
-    if (!['owner', 'admin'].includes(role)) {
-      return new Response(JSON.stringify({ error: 'Forbidden — only owner or admin' }), { status: 403, headers: corsHeaders })
+    const headerKey = req.headers.get('apikey') || ''
+    let canAdmin = headerKey === key
+
+    if (!canAdmin) {
+      const token = req.headers.get('Authorization')?.replace('Bearer ', '')
+      const { data: { user } } = await supabase.auth.getUser(token)
+      const role = (user?.user_metadata?.role || '').toString().toLowerCase()
+      canAdmin = ['owner', 'admin'].includes(role)
+    }
+
+    if (!canAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden — only owner/admin or service role' }), { status: 403, headers: corsHeaders })
     }
 
     const body = await req.json()
