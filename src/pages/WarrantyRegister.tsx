@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { registerWarranty, checkCode } from '../lib/api'
  
@@ -34,6 +35,7 @@ export default function WarrantyRegister() {
   const [emailSent, setEmailSent] = useState(false)
   const [overlayVisible, setOverlayVisible] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate()
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
@@ -77,6 +79,7 @@ export default function WarrantyRegister() {
     setOverlayVisible(true)
     setTimeout(() => setOverlayVisible(false), 1200)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
+    try { navigate('/warranty-success', { replace: true, state: { emailSent: !!(r as any)?.emailSent, email } }) } catch {}
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
     submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setIsSubmitting(false) }, 8000)
   }
