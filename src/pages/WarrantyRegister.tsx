@@ -61,17 +61,12 @@ export default function WarrantyRegister() {
     if (!agree) errs.agree = 'Acceptance required'
     if (codeDigits.length === 0) errs.productCode = 'Enter a 16 or 20-digit code'
     if (Object.keys(errs).length) { setErrors(errs); return }
-    try {
-      const r = await checkCode(codeDigits)
-      if (!r.exists) { setErrors({ ...errs, productCode: 'Invalid code' }); return }
-      if (productType === 'Dream Case' && !codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Not valid for Dream Case product' }); return }
-      if (productType !== 'Dream Case' && codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Valid only with Dream Case product' }); return }
-    } catch {
-      setErrors({ ...errs, productCode: 'Invalid code' }); return
-    }
+    if (productType === 'Dream Case' && !codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Not valid for Dream Case product' }); return }
+    if (productType !== 'Dream Case' && codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Valid only with Dream Case product' }); return }
     setErrors({})
     setIsSubmitting(true)
     const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
+    if ((r as any)?.error) { setIsSubmitting(false); setErrors({ ...errs, productCode: String((r as any).error) }); return }
     setEmailSent(!!(r as any)?.emailSent)
     setSubmitted(true)
     try { navigate('/warranty-success', { replace: true, state: { emailSent: !!(r as any)?.emailSent, email } }) } catch {}
