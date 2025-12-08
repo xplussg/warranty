@@ -55,14 +55,40 @@ function renderHtml(d: any): string {
   ]
   const rows = items
     .filter(([_, v]) => v.length > 0)
-    .map(([k, v]) => `<tr><td style="padding:8px;border:1px solid #eee;font-weight:600">${escapeHtml(k)}</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(v)}</td></tr>`) 
+    .map(([k, v]) => `<tr><td style="padding:10px;border:1px solid #f1d5d7;background:#fee8ea;font-weight:600;color:#4a0a0e">${escapeHtml(k)}</td><td style="padding:10px;border:1px solid #f1d5d7">${escapeHtml(v)}</td></tr>`) 
     .join('')
-  return `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto; color:#111">
-    <h2 style="color:#d51015;margin:0 0 12px">XPLUS Warranty Registration</h2>
-    <p>Thank you for registering your warranty. Here are your details:</p>
-    <table style="border-collapse:collapse;border:1px solid #eee">${rows}</table>
-    <p style="margin-top:12px">If anything looks wrong, reply to this email and our team will help.</p>
-  </body></html>`
+  const logo = 'https://www.xplus.com.sg/xplus.png'
+  return `<!doctype html>
+  <html>
+  <body style="margin:0;background:#f8f9fb;font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f9fb;padding:24px 0">
+      <tr><td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #f1d5d7;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.08)">
+          <tr>
+            <td style="background:#d51015;color:#ffffff;padding:16px 20px">
+              <table width="100%" cellspacing="0" cellpadding="0"><tr>
+                <td style="vertical-align:middle"><img src="${logo}" alt="XPLUS" width="120" style="display:block" /></td>
+                <td align="right" style="vertical-align:middle;font-size:18px;font-weight:600">Warranty Confirmation</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 20px">
+              <h2 style="margin:0 0 10px;color:#a10e11;font-size:22px">Thank you for registering</h2>
+              <p style="margin:0 0 16px;color:#333">Your XPLUS warranty has been successfully activated. Keep this email for your records.</p>
+              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #f1d5d7">${rows}</table>
+              <div style="margin-top:16px;padding:12px;border:1px solid #f1d5d7;border-radius:8px;background:#fff7f7;color:#4a0a0e">
+                <div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div>
+                <div style="font-size:14px;line-height:1.5">100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div>
+              </div>
+              <p style="margin-top:16px;font-size:13px;color:#555">If anything looks incorrect, reply to this email and our team will assist you.</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`
 }
 
 function escapeHtml(s: string): string {
@@ -72,4 +98,3 @@ function escapeHtml(s: string): string {
 // Ensure default export is picked by Supabase Edge runtime
 // deno-lint-ignore no-unused-vars
 export const serve = handler
-
