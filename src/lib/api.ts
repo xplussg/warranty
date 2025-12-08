@@ -90,17 +90,18 @@ export async function registerWarranty(data: any) {
     return { error: insertError.message }
   }
 
-  // 4. Send confirmation email (best-effort; ignore failures)
+  // 4. Send confirmation email (best-effort; include status)
+  let emailSent = false
   try {
-    await supabase.functions.invoke('warranty-email', {
+    const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
       body: { to: row.email, details: row }
     })
+    if (!fnErr && !(resp && resp.skipped)) emailSent = true
   } catch (e) {
-    // swallow email errors to avoid blocking registration
     console.warn('warranty-email invoke failed:', (e as any)?.message || e)
   }
 
-  return { ok: true }
+  return { ok: true, emailSent }
 }
 
 export async function listCodes(q = '', page = 1, pageSize = 20) {

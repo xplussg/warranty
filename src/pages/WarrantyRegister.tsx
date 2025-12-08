@@ -30,6 +30,7 @@ export default function WarrantyRegister() {
   const [submitted, setSubmitted] = useState(false)
   const submitTimerRef = useRef<any>(null)
   const [toastVisible, setToastVisible] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
@@ -63,11 +64,12 @@ export default function WarrantyRegister() {
       setErrors({ ...errs, productCode: 'Invalid code' }); return
     }
     setErrors({})
-    await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
+    const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
+    setEmailSent(!!(r as any)?.emailSent)
     setSubmitted(true)
     setToastVisible(true)
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
-    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setTimeout(() => setSubmitted(false), 300) }, 5000)
+    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setTimeout(() => setSubmitted(false), 300) }, 8000)
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -320,7 +322,7 @@ export default function WarrantyRegister() {
           {submitted && (
             <div className="toast" style={{ opacity: toastVisible ? 1 : 0 }}>
               <span className="toast-badge">Success</span>
-              <span>Your warranty registration is successful</span>
+              <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
             </div>
           )}
       {showPdpa && (
