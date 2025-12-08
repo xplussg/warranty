@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { registerWarranty, checkCode } from '../lib/api'
  
 
@@ -341,12 +342,12 @@ export default function WarrantyRegister() {
             </div>
             <button type="submit" className="btn-submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting…' : 'Submit Registration'}</button>
           </form>
-          {submitted && (
+          {submitted && createPortal((
             <div className="toast" style={{ opacity: toastVisible ? 1 : 0, visibility: toastVisible ? 'visible' : 'hidden' }}>
               <span className="toast-badge">Success</span>
               <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
             </div>
-          )}
+          ), document.body)}
           {overlayVisible && (
             <div className="success-overlay">
               <div className="success-card">

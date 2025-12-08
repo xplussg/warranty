@@ -90,28 +90,38 @@ export async function registerWarranty(data: any) {
     return { error: insertError.message }
   }
 
-  // 4. Send confirmation email (best-effort; include status)
+  // 4. Send confirmation email (best-effort with retries)
   let emailSent = false
   try {
-    const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
-      body: { to: row.email, details: row }
-    })
-    if (!fnErr && !(resp && resp.skipped)) emailSent = true
-    if (fnErr || !resp) {
+    async function attempt() {
+      try {
+        const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
+          body: { to: row.email, details: row }
+        })
+        if (!fnErr && !(resp && resp.skipped)) return true
+      } catch {}
       const env = (import.meta as any).env || {}
       const base = env.VITE_SUPABASE_URL
       const anon = env.VITE_SUPABASE_ANON_KEY
       if (base && anon) {
-        const res = await fetch(`${base}/functions/v1/warranty-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': anon },
-          body: JSON.stringify({ to: row.email, details: row })
-        })
-        if (res.ok) {
-          const j = await res.json().catch(() => ({}))
-          if (!j.skipped) emailSent = true
-        }
+        try {
+          const res = await fetch(`${base}/functions/v1/warranty-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': anon },
+            body: JSON.stringify({ to: row.email, details: row })
+          })
+          if (res.ok) {
+            const j = await res.json().catch(() => ({}))
+            if (!j.skipped) return true
+          }
+        } catch {}
       }
+      return false
+    }
+    for (let i = 0; i < 3; i++) {
+      const ok = await attempt()
+      if (ok) { emailSent = true; break }
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)))
     }
   } catch (e) {
     console.warn('warranty-email invoke failed:', (e as any)?.message || e)
