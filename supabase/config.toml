@@ -1,2 +1,5 @@
 [functions.warranty-email]
 verify_jwt = false
+
+[functions.search-warranties]
+verify_jwt = false

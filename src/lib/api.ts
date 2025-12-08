@@ -168,16 +168,16 @@ export async function deleteCode(id: number) {
 
 export async function searchWarrantiesByEmail(email: string) {
   const clean = email.trim()
-  const pattern = `%${clean}%`
-  const { data, count, error } = await supabase
-    .from('warranty_registrations')
-    .select('*', { count: 'exact' })
-    .ilike('email', pattern)
-
-  if (error) return { items: [], count: 0 }
-
-  const items = (data || []).map((r: any) => mapWarranty(r))
-  return { items, count: count || items.length }
+  try {
+    const { data, error } = await (supabase as any).functions.invoke('search-warranties', {
+      body: { email: clean }
+    })
+    if (error) return { items: [], count: 0 }
+    const items = ((data && data.items) || []).map((r: any) => ({ ...r }))
+    return { items, count: (data && data.count) || items.length }
+  } catch {
+    return { items: [], count: 0 }
+  }
 }
 
 export async function uploadCodes(file: File): Promise<any> {
