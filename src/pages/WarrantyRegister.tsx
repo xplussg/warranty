@@ -13,6 +13,28 @@ function fmt(d: Date) {
 }
 
 export default function WarrantyRegister() {
+  const [remainingMs, setRemainingMs] = useState(0)
+  function nextTenSgtUtcMs(nowUtcMs: number) {
+    const sgtOffsetMs = 8 * 3600 * 1000
+    const sgtNow = new Date(nowUtcMs + sgtOffsetMs)
+    const y = sgtNow.getUTCFullYear()
+    const m = sgtNow.getUTCMonth()
+    const d = sgtNow.getUTCDate()
+    let target = Date.UTC(y, m, d, 2)
+    if (nowUtcMs >= target) target = Date.UTC(y, m, d + 1, 2)
+    return target
+  }
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now()
+      const target = nextTenSgtUtcMs(now)
+      const rem = Math.max(0, target - now)
+      setRemainingMs(rem)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
   const [productCode, setProductCode] = useState('')
   const [purchaseDate, setPurchaseDate] = useState('')
   const expiryDate = useMemo(() => {
@@ -219,6 +241,23 @@ export default function WarrantyRegister() {
           </div>
         </div>
         <div className="form-panel">
+          {remainingMs > 0 ? (
+            <div>
+              <div className="form-header"><h2>Warranty Registration</h2></div>
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-[#7A5D00] mb-6">
+                <div className="text-xl font-semibold mb-2">Temporarily Under Construction</div>
+                <div className="mb-3">Available by 10:00 AM Singapore Time</div>
+                {(() => {
+                  const total = remainingMs
+                  const h = Math.floor(total / 3600000)
+                  const m = Math.floor((total % 3600000) / 60000)
+                  const s = Math.floor((total % 60000) / 1000)
+                  return <div className="text-2xl font-mono">{String(h).padStart(2,'0')}:{String(m).padStart(2,'0')}:{String(s).padStart(2,'0')}</div>
+                })()}
+              </div>
+            </div>
+          ) : (
+          <div>
           <div className="form-header"><h2>Product Details</h2></div>
           <form onSubmit={onSubmit}>
             <div className="grid-2">
@@ -317,12 +356,14 @@ export default function WarrantyRegister() {
             </div>
             <button type="submit" className="btn-submit">Submit Registration</button>
           </form>
+          </div>
+          )}
           {submitted && (
             <div className="toast" style={{ opacity: toastVisible ? 1 : 0 }}>
               <span className="toast-badge">Success</span>
               <span>Your warranty registration is successful</span>
             </div>
-      )}
+          )}
       {showPdpa && (
         <div className="drawer-backdrop" onClick={() => setShowPdpa(false)}>
           <div className="drawer" onClick={e => e.stopPropagation()}>

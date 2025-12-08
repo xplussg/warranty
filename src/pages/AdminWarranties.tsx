@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { searchWarranties, deleteWarranty, claimWarranty, unclaimWarranty } from '../lib/api'
+import { searchWarranties, deleteWarranty, claimWarranty, unclaimWarranty, uploadWarranties } from '../lib/api'
 import { getRole } from '../lib/auth'
 
 export default function AdminWarranties() {
@@ -11,10 +11,19 @@ export default function AdminWarranties() {
   const [items, setItems] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [message, setMessage] = useState('')
+  const [csvFile, setCsvFile] = useState<File|null>(null)
 
   useEffect(() => { getRole().then(setRole) }, [])
 
-  // upload hidden
+  async function onUploadCsv() {
+    if (!csvFile) return
+    setMessage('')
+    const r: any = await uploadWarranties(csvFile)
+    if (r?.error) { setMessage(String(r.error)); return }
+    await refresh()
+    setCsvFile(null)
+    setMessage(`Uploaded ${r.count || 0} warranties`)
+  }
   
 
   async function refresh() {
@@ -84,6 +93,12 @@ export default function AdminWarranties() {
       
       <div className="flex items-center gap-3 mb-3 justify-between">
         <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Search" value={q} onChange={e => setQ(e.target.value)} />
+        {role !== 'partner' && (
+          <div className="flex items-center gap-2">
+            <input type="file" accept=".csv" onChange={e => setCsvFile(e.target.files?.[0] || null)} />
+            <button className="h-9 px-3 rounded-md border border-slate-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled={!csvFile} onClick={onUploadCsv}>Upload CSV</button>
+          </div>
+        )}
       </div>
       
       
