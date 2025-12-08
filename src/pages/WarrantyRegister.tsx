@@ -32,6 +32,7 @@ export default function WarrantyRegister() {
   const [toastVisible, setToastVisible] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [overlayVisible, setOverlayVisible] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
@@ -41,6 +42,7 @@ export default function WarrantyRegister() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isSubmitting) return
     const errs: Record<string, string> = {}
     const codeDigits = productCode.replace(/\s|-/g, '')
     function isEmail(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
@@ -65,6 +67,7 @@ export default function WarrantyRegister() {
       setErrors({ ...errs, productCode: 'Invalid code' }); return
     }
     setErrors({})
+    setIsSubmitting(true)
     const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
     setEmailSent(!!(r as any)?.emailSent)
     setSubmitted(true)
@@ -72,7 +75,7 @@ export default function WarrantyRegister() {
     setOverlayVisible(true)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
-    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setTimeout(() => setSubmitted(false), 300) }, 8000)
+    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setTimeout(() => { setSubmitted(false); setIsSubmitting(false) }, 300) }, 8000)
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -165,6 +168,9 @@ export default function WarrantyRegister() {
         .success-banner .icon { display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center; }
         .success-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:10000; }
         .success-card { background:#fff; border:1px solid #CDE7C1; border-radius:12px; padding:16px 20px; color:#1A4B1A; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+        .blocking-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; z-index:9998; }
+        .blocking-card { background:#fff; border:1px solid #FFCDD2; border-radius:12px; padding:12px 16px; color:#4A0A0E; box-shadow:0 10px 30px rgba(0,0,0,0.15); font-size:0.95rem; }
+        .btn-submit[disabled] { opacity:0.6; cursor:not-allowed; }
         .full-width { grid-column:1 / -1; }
         .form-group { margin-bottom:25px; }
         .form-label { display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--red-deep); margin-bottom:8px; font-weight:600; }
@@ -332,7 +338,7 @@ export default function WarrantyRegister() {
               </div>
               {errors.agree && <div className="error-text">{errors.agree}</div>}
             </div>
-            <button type="submit" className="btn-submit">Submit Registration</button>
+            <button type="submit" className="btn-submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting…' : 'Submit Registration'}</button>
           </form>
           {submitted && (
             <div className="toast" style={{ opacity: toastVisible ? 1 : 0, visibility: toastVisible ? 'visible' : 'hidden' }}>
@@ -350,6 +356,11 @@ export default function WarrantyRegister() {
                   <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
                 </div>
               </div>
+            </div>
+          )}
+          {isSubmitting && !submitted && (
+            <div className="blocking-overlay">
+              <div className="blocking-card">Submitting… Please wait</div>
             </div>
           )}
       {showPdpa && (
