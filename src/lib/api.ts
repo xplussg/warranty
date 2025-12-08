@@ -90,6 +90,16 @@ export async function registerWarranty(data: any) {
     return { error: insertError.message }
   }
 
+  // 4. Send confirmation email (best-effort; ignore failures)
+  try {
+    await supabase.functions.invoke('warranty-email', {
+      body: { to: row.email, details: row }
+    })
+  } catch (e) {
+    // swallow email errors to avoid blocking registration
+    console.warn('warranty-email invoke failed:', (e as any)?.message || e)
+  }
+
   return { ok: true }
 }
 
