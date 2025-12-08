@@ -78,7 +78,7 @@ export default function WarrantyRegister() {
     setTimeout(() => setOverlayVisible(false), 1200)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
-    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setTimeout(() => { setSubmitted(false); setIsSubmitting(false) }, 300) }, 8000)
+    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setIsSubmitting(false) }, 8000)
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
