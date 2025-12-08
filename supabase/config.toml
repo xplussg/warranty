@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.search-warranties]
 verify_jwt = false
+
+[functions.register-warranty]
+verify_jwt = false
