@@ -16,6 +16,17 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify Supabase env
+        run: |
+          test -n "$VITE_SUPABASE_URL" || (echo "VITE_SUPABASE_URL missing" && exit 1)
+          test -n "$VITE_SUPABASE_ANON_KEY" || (echo "VITE_SUPABASE_ANON_KEY missing" && exit 1)
+          echo "Supabase URL host: $(echo "$VITE_SUPABASE_URL" | sed 's#https://##' | cut -d/ -f1)"
+          echo "Anon key length: ${#VITE_SUPABASE_ANON_KEY}"
+      - name: Ping Supabase REST
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$VITE_SUPABASE_URL/rest/v1/")
+          echo "REST status: $code"
+          [ "$code" != "000" ] || (echo "Supabase URL unreachable" && exit 1)
       - run: npm run build
       - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

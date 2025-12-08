@@ -3,7 +3,15 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 export default async function handler(req: Request): Promise<Response> {
   try {
-    if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 })
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    }
+    if (req.method === 'OPTIONS') {
+      return new Response('ok', { status: 200, headers: cors })
+    }
+    if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: cors })
     const payload = await req.json()
     const to = String(payload?.to || '').trim()
     if (!to) return new Response(JSON.stringify({ error: 'Missing recipient' }), { status: 400 })
@@ -14,7 +22,7 @@ export default async function handler(req: Request): Promise<Response> {
     const apiKey = Deno.env.get('RESEND_API_KEY') || ''
     if (!apiKey) {
       console.log('RESEND_API_KEY missing; email skipped. Details:', { to, details })
-      return new Response(JSON.stringify({ skipped: true }), { status: 200 })
+      return new Response(JSON.stringify({ skipped: true }), { status: 200, headers: cors })
     }
 
     async function send(from: string) {
@@ -34,11 +42,16 @@ export default async function handler(req: Request): Promise<Response> {
     }
     if (!r.ok) {
       const text = await r.text()
-      return new Response(JSON.stringify({ error: `Email send failed: ${text}` }), { status: 500 })
+      return new Response(JSON.stringify({ error: `Email send failed: ${text}` }), { status: 500, headers: cors })
     }
-    return new Response(JSON.stringify({ ok: true }), { status: 200 })
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors })
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: String(err?.message || err) }), { status: 500 })
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    }
+    return new Response(JSON.stringify({ error: String(err?.message || err) }), { status: 500, headers: cors })
   }
 }
 
