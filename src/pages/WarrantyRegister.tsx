@@ -181,7 +181,7 @@ export default function WarrantyRegister() {
         .input-with-icon input.form-input { padding-right:42px; }
         .btn-submit { width:100%; padding:18px; background:var(--red-primary); color:var(--white); border:none; border-radius:var(--radius-inner); font-size:0.9rem; text-transform:uppercase; letter-spacing:2px; font-weight:600; cursor:pointer; transition:var(--transition); box-shadow:0 10px 20px rgba(211,47,47,0.2); }
         .btn-submit:hover { background:var(--red-deep); transform:translateY(-3px); box-shadow:0 15px 30px rgba(138,21,27,0.3); }
-        .toast { position:fixed; right:24px; bottom:24px; background:var(--gold-bg); color:var(--gold-text); border:1px solid var(--gold-border); border-radius:10px; box-shadow:0 10px 20px rgba(0,0,0,0.12); padding:10px 12px; display:flex; align-items:center; gap:10px; min-width:240px; font-size:0.85rem; transition:opacity 0.3s ease, transform 0.3s ease; transform:translateY(8px); z-index:1000; }
+        .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%, 8px); background:var(--gold-bg); color:var(--gold-text); border:1px solid var(--gold-border); border-radius:10px; box-shadow:0 10px 20px rgba(0,0,0,0.12); padding:10px 12px; display:flex; align-items:center; gap:10px; min-width:260px; max-width:90vw; font-size:0.9rem; z-index:9999; pointer-events:none; }
         .toast-badge { background:var(--gold-badge); color:var(--gold-text); border:1px solid var(--gold-border); border-radius:6px; padding:2px 6px; font-size:0.75rem; }
         .toast-close { margin-left:auto; background:transparent; border:none; color:var(--gold-text); font-size:18px; cursor:pointer; line-height:1; }
         .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:stretch; justify-content:flex-end; z-index:50; }
@@ -330,7 +330,7 @@ export default function WarrantyRegister() {
             <button type="submit" className="btn-submit">Submit Registration</button>
           </form>
           {submitted && (
-            <div className="toast" style={{ opacity: toastVisible ? 1 : 0 }}>
+            <div className="toast" style={{ opacity: toastVisible ? 1 : 0, visibility: toastVisible ? 'visible' : 'hidden' }}>
               <span className="toast-badge">Success</span>
               <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
             </div>
