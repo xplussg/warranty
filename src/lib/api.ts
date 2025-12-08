@@ -104,7 +104,7 @@ export async function registerWarranty(data: any) {
       if (base && anon) {
         const res = await fetch(`${base}/functions/v1/warranty-email`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': anon, 'Authorization': `Bearer ${anon}` },
+          headers: { 'Content-Type': 'application/json', 'apikey': anon },
           body: JSON.stringify({ to: row.email, details: row })
         })
         if (res.ok) {
