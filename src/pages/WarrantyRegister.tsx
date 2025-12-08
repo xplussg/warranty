@@ -31,6 +31,7 @@ export default function WarrantyRegister() {
   const submitTimerRef = useRef<any>(null)
   const [toastVisible, setToastVisible] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+  const [overlayVisible, setOverlayVisible] = useState(false)
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
@@ -68,8 +69,10 @@ export default function WarrantyRegister() {
     setEmailSent(!!(r as any)?.emailSent)
     setSubmitted(true)
     setToastVisible(true)
+    setOverlayVisible(true)
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
-    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setTimeout(() => setSubmitted(false), 300) }, 8000)
+    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setTimeout(() => setSubmitted(false), 300) }, 8000)
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -160,6 +163,8 @@ export default function WarrantyRegister() {
         .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
         .success-banner { margin-bottom:16px; padding:12px 14px; border:1px solid #CDE7C1; background:#F3FAEE; color:#1A4B1A; border-radius:10px; display:flex; align-items:center; gap:10px; }
         .success-banner .icon { display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center; }
+        .success-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:10000; }
+        .success-card { background:#fff; border:1px solid #CDE7C1; border-radius:12px; padding:16px 20px; color:#1A4B1A; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
         .full-width { grid-column:1 / -1; }
         .form-group { margin-bottom:25px; }
         .form-label { display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--red-deep); margin-bottom:8px; font-weight:600; }
@@ -333,6 +338,18 @@ export default function WarrantyRegister() {
             <div className="toast" style={{ opacity: toastVisible ? 1 : 0, visibility: toastVisible ? 'visible' : 'hidden' }}>
               <span className="toast-badge">Success</span>
               <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
+            </div>
+          )}
+          {overlayVisible && (
+            <div className="success-overlay">
+              <div className="success-card">
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span className="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                  </span>
+                  <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
+                </div>
+              </div>
             </div>
           )}
       {showPdpa && (
