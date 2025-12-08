@@ -1,6 +1,4 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { createPortal } from 'react-dom'
 import { registerWarranty, checkCode } from '../lib/api'
  
 
@@ -35,7 +33,6 @@ export default function WarrantyRegister() {
   const [emailSent, setEmailSent] = useState(false)
   const [overlayVisible, setOverlayVisible] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const navigate = useNavigate()
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
@@ -61,21 +58,25 @@ export default function WarrantyRegister() {
     if (!agree) errs.agree = 'Acceptance required'
     if (codeDigits.length === 0) errs.productCode = 'Enter a 16 or 20-digit code'
     if (Object.keys(errs).length) { setErrors(errs); return }
-    if (productType === 'Dream Case' && !codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Not valid for Dream Case product' }); return }
-    if (productType !== 'Dream Case' && codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Valid only with Dream Case product' }); return }
+    try {
+      const r = await checkCode(codeDigits)
+      if (!r.exists) { setErrors({ ...errs, productCode: 'Invalid code' }); return }
+      if (productType === 'Dream Case' && !codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Not valid for Dream Case product' }); return }
+      if (productType !== 'Dream Case' && codeDigits.startsWith('8899')) { setErrors({ ...errs, productCode: 'Valid only with Dream Case product' }); return }
+    } catch {
+      setErrors({ ...errs, productCode: 'Invalid code' }); return
+    }
     setErrors({})
     setIsSubmitting(true)
     const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
-    if ((r as any)?.error) { setIsSubmitting(false); setErrors({ ...errs, productCode: String((r as any).error) }); return }
     setEmailSent(!!(r as any)?.emailSent)
     setSubmitted(true)
-    try { navigate('/warranty-success', { replace: true, state: { emailSent: !!(r as any)?.emailSent, email } }) } catch {}
     setToastVisible(true)
     setOverlayVisible(true)
     setTimeout(() => setOverlayVisible(false), 1200)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
-    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setIsSubmitting(false) }, 8000)
+    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setTimeout(() => { setSubmitted(false); setIsSubmitting(false) }, 300) }, 8000)
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -243,17 +244,6 @@ export default function WarrantyRegister() {
             </div>
           )}
           <div className="form-header"><h2>Product Details</h2></div>
-          {submitted ? (
-            <div className="success-card" style={{ marginBottom: 20 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <span className="icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                </span>
-                <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
-              </div>
-            </div>
-          ) : null}
-          {!submitted && (
           <form onSubmit={onSubmit}>
             <div className="grid-2">
               <div className="form-group">
@@ -351,13 +341,12 @@ export default function WarrantyRegister() {
             </div>
             <button type="submit" className="btn-submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting…' : 'Submit Registration'}</button>
           </form>
-          )}
-          {submitted && createPortal((
+          {submitted && (
             <div className="toast" style={{ opacity: toastVisible ? 1 : 0, visibility: toastVisible ? 'visible' : 'hidden' }}>
               <span className="toast-badge">Success</span>
               <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
             </div>
-          ), document.body)}
+          )}
           {overlayVisible && (
             <div className="success-overlay">
               <div className="success-card">

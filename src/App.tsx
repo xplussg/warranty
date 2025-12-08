@@ -4,7 +4,6 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import CheckWarranty from './pages/CheckWarranty'
 import WarrantyRegister from './pages/WarrantyRegister'
-import WarrantySuccess from './pages/WarrantySuccess'
 import SupportLocation from './pages/SupportLocation'
 import AdminCodes from './pages/AdminCodes'
 import AdminLogin from './pages/AdminLogin'
@@ -137,7 +136,6 @@ export default function App() {
           <Route path="/" element={<WarrantyRegister />} />
           <Route path="/check-warranty" element={<CheckWarranty />} />
           <Route path="/warranty-register" element={<WarrantyRegister />} />
-          <Route path="/warranty-success" element={<WarrantySuccess />} />
           <Route path="/support-location" element={<SupportLocation />} />
           {/* Policy pages removed; see drawers in WarrantyRegister */}
           <Route path="/owner/codes" element={<PrivateRoute><OwnerRoute><AdminCodes /></OwnerRoute></PrivateRoute>} />

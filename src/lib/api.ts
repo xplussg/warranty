@@ -41,32 +41,83 @@ export async function checkCode(code: string): Promise<CodeCheck> {
 }
 
 export async function registerWarranty(data: any) {
-  try {
-    const payload = {
-      name: data.name,
-      email: data.email,
-      phoneModel: data.phoneModel,
-      mobile: data.mobile,
-      country: data.country,
-      productType: data.productType,
-      purchaseDate: data.purchaseDate,
-      expiryDate: data.expiryDate,
-      productCode: data.productCode
-    }
-    const res = await fetch('https://fmgscsneamoyrrgqgcpm.functions.supabase.co/register-warranty', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}))
-      return { error: (j && j.error) || `Failed to register (${res.status})` }
-    }
-    const j = await res.json().catch(() => ({}))
-    return { ok: true, emailSent: !!j.emailSent }
-  } catch (err: any) {
-    return { error: String(err?.message || err) }
+  // Client-side validation logic similar to server
+  const cleanCode = String(data.productCode || '').toUpperCase().replace(/\s+/g, '')
+  
+  // 1. Check if code exists in product_codes
+  const { data: codeData, error: codeError } = await supabase
+    .from('product_codes')
+    .select('id')
+    .eq('code', cleanCode)
+    .maybeSingle()
+
+  if (codeError || !codeData) {
+    return { error: 'Invalid product code' }
   }
+
+  // 2. Check if already registered
+  const { data: existing } = await supabase
+    .from('warranty_registrations')
+    .select('id')
+    .eq('product_code', cleanCode)
+    .maybeSingle()
+
+  if (existing) {
+    return { error: 'Product code already registered' }
+  }
+
+  // 3. Insert
+  // Map camelCase to snake_case
+  const row = {
+    name: data.name,
+    email: data.email,
+    phone_model: data.phoneModel,
+    mobile: data.mobile,
+    country: data.country,
+    product_type: data.productType,
+    purchase_date: data.purchaseDate,
+    expiry_date: data.expiryDate,
+    product_code: cleanCode,
+    status: 'Active',
+    created_at: new Date().toISOString()
+  }
+
+  const { error: insertError } = await supabase
+    .from('warranty_registrations')
+    .insert([row])
+
+  if (insertError) {
+    return { error: insertError.message }
+  }
+
+  // 4. Send confirmation email (best-effort; include status)
+  let emailSent = false
+  try {
+    const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
+      body: { to: row.email, details: row }
+    })
+    if (!fnErr && !(resp && resp.skipped)) emailSent = true
+    if (fnErr || !resp) {
+      const env = (import.meta as any).env || {}
+      const base = env.VITE_SUPABASE_URL
+      const anon = env.VITE_SUPABASE_ANON_KEY
+      if (base && anon) {
+        const res = await fetch(`${base}/functions/v1/warranty-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': anon },
+          body: JSON.stringify({ to: row.email, details: row })
+        })
+        if (res.ok) {
+          const j = await res.json().catch(() => ({}))
+          if (!j.skipped) emailSent = true
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('warranty-email invoke failed:', (e as any)?.message || e)
+  }
+
+  return { ok: true, emailSent }
 }
 
 export async function listCodes(q = '', page = 1, pageSize = 20) {
@@ -107,17 +158,16 @@ export async function deleteCode(id: number) {
 
 export async function searchWarrantiesByEmail(email: string) {
   const clean = email.trim()
-  try {
-    const res = await fetch('https://fmgscsneamoyrrgqgcpm.functions.supabase.co/search-warranties', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clean })
-    })
-    if (!res.ok) return { items: [], count: 0 }
-    const j = await res.json().catch(() => ({}))
-    const items = ((j && j.items) || []).map((r: any) => ({ ...r }))
-    return { items, count: (j && j.count) || items.length }
-  } catch {
-    return { items: [], count: 0 }
-  }
+  const pattern = `%${clean}%`
+  const { data, count, error } = await supabase
+    .from('warranty_registrations')
+    .select('*', { count: 'exact' })
+    .ilike('email', pattern)
+
+  if (error) return { items: [], count: 0 }
+
+  const items = (data || []).map((r: any) => mapWarranty(r))
+  return { items, count: count || items.length }
 }
 
 export async function uploadCodes(file: File): Promise<any> {
