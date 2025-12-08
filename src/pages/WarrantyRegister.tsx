@@ -20,7 +20,7 @@ export default function WarrantyRegister() {
     const y = sgtNow.getUTCFullYear()
     const m = sgtNow.getUTCMonth()
     const d = sgtNow.getUTCDate()
-    let target = Date.UTC(y, m, d, 2)
+    let target = Date.UTC(y, m, d, 2, 30)
     if (nowUtcMs >= target) target = Date.UTC(y, m, d + 1, 2)
     return target
   }
@@ -246,7 +246,7 @@ export default function WarrantyRegister() {
               <div className="form-header"><h2>Warranty Registration</h2></div>
               <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-[#7A5D00] mb-6">
                 <div className="text-xl font-semibold mb-2">Temporarily Under Construction</div>
-                <div className="mb-3">Available by 10:00 AM Singapore Time</div>
+              <div className="mb-3">Available by 10:30 AM Singapore Time</div>
                 {(() => {
                   const total = remainingMs
                   const h = Math.floor(total / 3600000)
