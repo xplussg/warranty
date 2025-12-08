@@ -17,19 +17,21 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ skipped: true }), { status: 200 })
     }
 
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'XPLUS <no-reply@xplus.com.sg>',
-        to: [to],
-        subject,
-        html
+    async function send(from: string) {
+      return await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ from, to: [to], subject, html })
       })
-    })
+    }
+    const preferredFrom = 'XPLUS <no-reply@xplus.com.sg>'
+    let r = await send(preferredFrom)
+    if (!r.ok) {
+      r = await send('XPLUS <onboarding@resend.dev>')
+    }
     if (!r.ok) {
       const text = await r.text()
       return new Response(JSON.stringify({ error: `Email send failed: ${text}` }), { status: 500 })

@@ -97,6 +97,22 @@ export async function registerWarranty(data: any) {
       body: { to: row.email, details: row }
     })
     if (!fnErr && !(resp && resp.skipped)) emailSent = true
+    if (fnErr || !resp) {
+      const env = (import.meta as any).env || {}
+      const base = env.VITE_SUPABASE_URL
+      const anon = env.VITE_SUPABASE_ANON_KEY
+      if (base && anon) {
+        const res = await fetch(`${base}/functions/v1/warranty-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': anon, 'Authorization': `Bearer ${anon}` },
+          body: JSON.stringify({ to: row.email, details: row })
+        })
+        if (res.ok) {
+          const j = await res.json().catch(() => ({}))
+          if (!j.skipped) emailSent = true
+        }
+      }
+    }
   } catch (e) {
     console.warn('warranty-email invoke failed:', (e as any)?.message || e)
   }

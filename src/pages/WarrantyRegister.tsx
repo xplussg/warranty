@@ -158,6 +158,8 @@ export default function WarrantyRegister() {
         .form-header { margin-bottom:30px; }
         .form-header h2 { font-family:'Montserrat', sans-serif; color:var(--red-primary); font-size:1.8rem; }
         .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
+        .success-banner { margin-bottom:16px; padding:12px 14px; border:1px solid #CDE7C1; background:#F3FAEE; color:#1A4B1A; border-radius:10px; display:flex; align-items:center; gap:10px; }
+        .success-banner .icon { display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center; }
         .full-width { grid-column:1 / -1; }
         .form-group { margin-bottom:25px; }
         .form-label { display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--red-deep); margin-bottom:8px; font-weight:600; }
@@ -221,6 +223,14 @@ export default function WarrantyRegister() {
           </div>
         </div>
         <div className="form-panel">
+          {submitted && (
+            <div className="success-banner">
+              <span className="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+              </span>
+              <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
+            </div>
+          )}
           <div className="form-header"><h2>Product Details</h2></div>
           <form onSubmit={onSubmit}>
             <div className="grid-2">
