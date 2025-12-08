@@ -56,8 +56,8 @@ export default function AdminLogin() {
           <div className="form-header"><h2>Login</h2></div>
           <form onSubmit={onSubmit}>
             <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <input id="email" type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} />
+              <label className="form-label" htmlFor="identifier">Email or Username</label>
+              <input id="identifier" type="text" className="form-input" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div className="form-group input-with-toggle">
               <label className="form-label" htmlFor="password">Password</label>
