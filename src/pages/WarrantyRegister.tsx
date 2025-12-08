@@ -74,12 +74,11 @@ export default function WarrantyRegister() {
     const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
     setEmailSent(!!(r as any)?.emailSent)
     setSubmitted(true)
+    try { navigate('/warranty-success', { replace: true, state: { emailSent: !!(r as any)?.emailSent, email } }) } catch {}
     setToastVisible(true)
-    try { alert(`Your warranty registration is successful${(r as any)?.emailSent ? ` — confirmation sent to ${email}` : ''}`) } catch {}
     setOverlayVisible(true)
     setTimeout(() => setOverlayVisible(false), 1200)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
-    try { navigate('/warranty-success', { replace: true, state: { emailSent: !!(r as any)?.emailSent, email } }) } catch {}
     if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
     submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setIsSubmitting(false) }, 8000)
   }
