@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { registerWarranty, checkCode } from '../lib/api'
  
 
@@ -13,6 +14,7 @@ function fmt(d: Date) {
 }
 
 export default function WarrantyRegister() {
+  const navigate = useNavigate()
   const [productCode, setProductCode] = useState('')
   const [purchaseDate, setPurchaseDate] = useState('')
   const expiryDate = useMemo(() => {
@@ -27,11 +29,7 @@ export default function WarrantyRegister() {
   const [productCategory, setProductCategory] = useState('')
   const [productType, setProductType] = useState('')
   const [agree, setAgree] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-  const submitTimerRef = useRef<any>(null)
-  const [toastVisible, setToastVisible] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
-  const [overlayVisible, setOverlayVisible] = useState(false)
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
@@ -69,14 +67,8 @@ export default function WarrantyRegister() {
     setErrors({})
     setIsSubmitting(true)
     const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
-    setEmailSent(!!(r as any)?.emailSent)
-    setSubmitted(true)
-    setToastVisible(true)
-    setOverlayVisible(true)
-    setTimeout(() => setOverlayVisible(false), 1200)
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
-    if (submitTimerRef.current) { clearTimeout(submitTimerRef.current); submitTimerRef.current = null }
-    submitTimerRef.current = setTimeout(() => { setToastVisible(false); setOverlayVisible(false); setTimeout(() => { setSubmitted(false); setIsSubmitting(false) }, 300) }, 8000)
+    const emailSent = !!(r as any)?.emailSent
+    navigate('/warranty-success', { replace: true, state: { email, emailSent } })
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -165,12 +157,6 @@ export default function WarrantyRegister() {
         .form-header { margin-bottom:30px; }
         .form-header h2 { font-family:'Montserrat', sans-serif; color:var(--red-primary); font-size:1.8rem; }
         .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
-        .success-banner { margin-bottom:16px; padding:12px 14px; border:1px solid #CDE7C1; background:#F3FAEE; color:#1A4B1A; border-radius:10px; display:flex; align-items:center; gap:10px; }
-        .success-banner .icon { display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center; }
-        .success-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:10000; pointer-events:none; }
-        .success-card { background:#fff; border:1px solid #CDE7C1; border-radius:12px; padding:16px 20px; color:#1A4B1A; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
-        .blocking-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; z-index:9998; }
-        .blocking-card { background:#fff; border:1px solid #FFCDD2; border-radius:12px; padding:12px 16px; color:#4A0A0E; box-shadow:0 10px 30px rgba(0,0,0,0.15); font-size:0.95rem; }
         .btn-submit[disabled] { opacity:0.6; cursor:not-allowed; }
         .full-width { grid-column:1 / -1; }
         .form-group { margin-bottom:25px; }
@@ -193,9 +179,7 @@ export default function WarrantyRegister() {
         .input-with-icon input.form-input { padding-right:42px; }
         .btn-submit { width:100%; padding:18px; background:var(--red-primary); color:var(--white); border:none; border-radius:var(--radius-inner); font-size:0.9rem; text-transform:uppercase; letter-spacing:2px; font-weight:600; cursor:pointer; transition:var(--transition); box-shadow:0 10px 20px rgba(211,47,47,0.2); }
         .btn-submit:hover { background:var(--red-deep); transform:translateY(-3px); box-shadow:0 15px 30px rgba(138,21,27,0.3); }
-        .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%, 8px); background:var(--gold-bg); color:var(--gold-text); border:1px solid var(--gold-border); border-radius:10px; box-shadow:0 10px 20px rgba(0,0,0,0.12); padding:10px 12px; display:flex; align-items:center; gap:10px; min-width:260px; max-width:90vw; font-size:0.9rem; z-index:10001; pointer-events:none; }
-        .toast-badge { background:var(--gold-badge); color:var(--gold-text); border:1px solid var(--gold-border); border-radius:6px; padding:2px 6px; font-size:0.75rem; }
-        .toast-close { margin-left:auto; background:transparent; border:none; color:var(--gold-text); font-size:18px; cursor:pointer; line-height:1; }
+        
         .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:stretch; justify-content:flex-end; z-index:50; }
         .drawer { width:min(560px, 90vw); height:100vh; background:#fff; box-shadow:-12px 0 28px rgba(0,0,0,0.12); padding:32px; display:flex; flex-direction:column; }
         .drawer-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
@@ -235,14 +219,6 @@ export default function WarrantyRegister() {
           </div>
         </div>
         <div className="form-panel">
-          {submitted && (
-            <div className="success-banner">
-              <span className="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-              </span>
-              <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
-            </div>
-          )}
           <div className="form-header"><h2>Product Details</h2></div>
           <form onSubmit={onSubmit}>
             <div className="grid-2">
@@ -341,29 +317,7 @@ export default function WarrantyRegister() {
             </div>
             <button type="submit" className="btn-submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting…' : 'Submit Registration'}</button>
           </form>
-          {submitted && (
-            <div className="toast" style={{ opacity: toastVisible ? 1 : 0, visibility: toastVisible ? 'visible' : 'hidden' }}>
-              <span className="toast-badge">Success</span>
-              <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
-            </div>
-          )}
-          {overlayVisible && (
-            <div className="success-overlay">
-              <div className="success-card">
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <span className="icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                  </span>
-                  <span>Your warranty registration is successful{emailSent ? ` — confirmation sent to ${email}` : ''}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          {isSubmitting && !submitted && (
-            <div className="blocking-overlay">
-              <div className="blocking-card">Submitting… Please wait</div>
-            </div>
-          )}
+
       {showPdpa && (
         <div className="drawer-backdrop" onClick={() => setShowPdpa(false)}>
           <div className="drawer" onClick={e => e.stopPropagation()}>
