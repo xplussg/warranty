@@ -90,34 +90,30 @@ export async function registerWarranty(data: any) {
     return { error: insertError.message }
   }
 
-  // 4. Send confirmation email (best-effort; include status)
-  let emailSent = false
+  // 4. Send confirmation email (fire-and-forget; do NOT block UI)
   try {
-    const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
-      body: { to: row.email, details: row }
-    })
-    if (!fnErr && !(resp && resp.skipped)) emailSent = true
-    if (fnErr || !resp) {
-      const env = (import.meta as any).env || {}
-      const base = env.VITE_SUPABASE_URL
-      const anon = env.VITE_SUPABASE_ANON_KEY
-      if (base && anon) {
-        const res = await fetch(`${base}/functions/v1/warranty-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': anon },
-          body: JSON.stringify({ to: row.email, details: row })
+    setTimeout(async () => {
+      try {
+        const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
+          body: { to: row.email, details: row }
         })
-        if (res.ok) {
-          const j = await res.json().catch(() => ({}))
-          if (!j.skipped) emailSent = true
+        if (fnErr || !resp) {
+          const env = (import.meta as any).env || {}
+          const base = env.VITE_SUPABASE_URL
+          const anon = env.VITE_SUPABASE_ANON_KEY
+          if (base && anon) {
+            await fetch(`${base}/functions/v1/warranty-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'apikey': anon },
+              body: JSON.stringify({ to: row.email, details: row })
+            }).catch(() => {})
+          }
         }
-      }
-    }
-  } catch (e) {
-    console.warn('warranty-email invoke failed:', (e as any)?.message || e)
-  }
+      } catch {}
+    }, 0)
+  } catch {}
 
-  return { ok: true, emailSent }
+  return { ok: true }
 }
 
 export async function listCodes(q = '', page = 1, pageSize = 20) {
