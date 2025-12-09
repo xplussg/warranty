@@ -31,6 +31,21 @@ export default function PartnerWarranties() {
     const m = t.match(/^(\d{4}-\d{2}-\d{2})/)
     return m ? m[1] : t
   }
+  function fmtLocalDateTime(v: any) {
+    const t = String(v || '').trim()
+    if (!t) return ''
+    const d = new Date(t)
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Singapore',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    }).formatToParts(d)
+    const get = (type: string) => (parts.find(p => p.type === type)?.value || '')
+    const y = get('year'), m = get('month'), da = get('day')
+    const h = get('hour'), mi = get('minute'), s = get('second')
+    return `${y}-${m}-${da}, ${h}:${mi}:${s}`
+  }
   function show(v: any) {
     const t = String(v || '').trim()
     return t ? t : '—'
@@ -103,7 +118,7 @@ export default function PartnerWarranties() {
                 </div>
               </td>
               <td className="p-2 border" style={{ fontFamily: 'Roboto Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{show(w.productCode)}</td>
-              <td className="p-2 border">{show(w.createdAt)}</td>
+              <td className="p-2 border">{fmtLocalDateTime(w.createdAt)}</td>
               <td className="p-2 border">
                 <button
                   className="px-2 py-1 border rounded"
@@ -114,7 +129,7 @@ export default function PartnerWarranties() {
                   {w.status === 'Claimed' ? 'Claimed' : 'Claim'}
                 </button>
               </td>
-              <td className="p-2 border">{w.claimedBy ? `${w.claimedBy}` : ''}{w.claimedAt ? ` / ${w.claimedAt}` : ''}</td>
+              <td className="p-2 border">{w.claimedBy ? `${w.claimedBy}` : ''}{w.claimedAt ? ` / ${fmtLocalDateTime(w.claimedAt)}` : ''}</td>
             </tr>
           ))}
         </tbody>
