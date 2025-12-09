@@ -31,6 +31,7 @@ export default function WarrantyRegister() {
   const [agree, setAgree] = useState(false)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigatedRef = useRef(false)
   const [showPdpa, setShowPdpa] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
@@ -66,9 +67,27 @@ export default function WarrantyRegister() {
     }
     setErrors({})
     setIsSubmitting(true)
-    const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
-    const emailSent = !!(r as any)?.emailSent
-    navigate('/warranty-success', { replace: true, state: { email, emailSent } })
+    const fallback = setTimeout(() => {
+      if (!navigatedRef.current) {
+        navigatedRef.current = true
+        navigate('/warranty-success', { replace: true, state: { email, emailSent: false } })
+      }
+    }, 8000)
+    try {
+      const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
+      clearTimeout(fallback)
+      const emailSent = !!(r as any)?.emailSent
+      if (!navigatedRef.current) {
+        navigatedRef.current = true
+        navigate('/warranty-success', { replace: true, state: { email, emailSent } })
+      }
+    } catch {
+      clearTimeout(fallback)
+      if (!navigatedRef.current) {
+        navigatedRef.current = true
+        navigate('/warranty-success', { replace: true, state: { email, emailSent: false } })
+      }
+    }
   }
 
   const [errors, setErrors] = useState<Record<string, string>>({})
