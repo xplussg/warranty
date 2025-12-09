@@ -56,10 +56,10 @@ export default function PartnerWarranties() {
     <section className="container py-12">
       <h2 className="page-title mb-6">Warranty Registrations</h2>
 
-      <div className="flex items-center gap-3 mb-3 justify-between">
-        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Enter name / email / phone" value={q} onChange={e => setQ(e.target.value)} />
-        <button className="px-4 py-2 rounded-md border border-slate-300" onClick={() => onSearch()}>Search</button>
-      </div>
+      <form onSubmit={(e) => { e.preventDefault(); onSearch() }} className="flex items-center gap-3 mb-3">
+        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Enter name / email / phone" value={q} onChange={e => setQ(e.target.value)} style={{ flex: 1, minWidth: 420 }} />
+        <button type="submit" className="px-4 py-2 rounded-md border border-slate-300">Search</button>
+      </form>
 
       {total === 0 && (
         <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
@@ -105,18 +105,13 @@ export default function PartnerWarranties() {
               <td className="p-2 border" style={{ fontFamily: 'Roboto Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{show(w.productCode)}</td>
               <td className="p-2 border">{show(w.createdAt)}</td>
               <td className="p-2 border">
-                <span
-                  aria-label={w.status === 'Claimed' ? 'Claimed' : 'Claim'}
-                  title={w.status === 'Claimed' ? 'Claimed' : 'Claim'}
-                  onClick={() => { if (w.status !== 'Claimed' && withinExpiry(w)) onClaim(w.id) }}
-                  className={`cursor-pointer ${w.status === 'Claimed' || !withinExpiry(w) ? 'text-slate-400' : 'hover:text-emerald-700'}`}
+                <button
+                  className="px-2 py-1 border rounded"
+                  disabled={w.status === 'Claimed' || !withinExpiry(w)}
+                  onClick={() => onClaim(w.id)}
                 >
-                  {w.status === 'Claimed' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  )}
-                </span>
+                  {w.status === 'Claimed' ? 'Claimed' : 'Claim'}
+                </button>
               </td>
               <td className="p-2 border">{w.claimedBy ? `${w.claimedBy}` : ''}{w.claimedAt ? ` / ${w.claimedAt}` : ''}</td>
             </tr>
