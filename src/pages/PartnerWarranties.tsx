@@ -57,7 +57,7 @@ export default function PartnerWarranties() {
       <h2 className="page-title mb-6">Warranty Registrations</h2>
 
       <form onSubmit={(e) => { e.preventDefault(); onSearch() }} className="flex items-center gap-3 mb-3">
-        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Enter name / email / phone" value={q} onChange={e => setQ(e.target.value)} style={{ flex: 1, minWidth: 420 }} />
+        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Enter name / email / phone" value={q} onChange={e => setQ(e.target.value)} style={{ width: '50%', minWidth: 280 }} />
         <button type="submit" className="px-4 py-2 rounded-md border border-slate-300">Search</button>
       </form>
 
@@ -108,6 +108,7 @@ export default function PartnerWarranties() {
                 <button
                   className="px-2 py-1 border rounded"
                   disabled={w.status === 'Claimed' || !withinExpiry(w)}
+                  style={w.status === 'Claimed' || !withinExpiry(w) ? { background:'#F5F5F5', color:'#9AA0A6', borderColor:'#E0E0E0', cursor:'default', pointerEvents:'none' } : {}}
                   onClick={() => onClaim(w.id)}
                 >
                   {w.status === 'Claimed' ? 'Claimed' : 'Claim'}
