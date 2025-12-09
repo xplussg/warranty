@@ -36,8 +36,8 @@ export default function PartnerWarranties() {
     return t ? t : '—'
   }
   function withinExpiry(w: any) {
-    const t = String(w.status || '').toLowerCase()
-    if (t.includes('claim')) return false
+    const t = String(w.status || '').trim().toLowerCase()
+    if (t === 'claimed') return false
     const m = String(w.expiryDate || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
     if (m) {
       const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
