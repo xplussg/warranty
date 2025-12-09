@@ -109,6 +109,15 @@ export async function registerWarranty(data: any) {
             }).catch(() => {})
           }
         }
+        // Also fire shared-hosting endpoint if available (same-origin)
+        try {
+          const endpoint = 'https://xplus.com.sg/api/warranty-register.php'
+          await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: row.email, details: row })
+          }).catch(() => {})
+        } catch {}
       } catch {}
     }, 0)
   } catch {}

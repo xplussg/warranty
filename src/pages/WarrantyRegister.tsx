@@ -77,15 +77,17 @@ export default function WarrantyRegister() {
       const r = await registerWarranty({ productCode: codeDigits, purchaseDate, expiryDate, name, email, country, phoneModel, mobile, productType, agree })
       clearTimeout(fallback)
       const emailSent = !!(r as any)?.emailSent
+      const details = { name, email, phoneModel, mobile, country, productType, purchaseDate, expiryDate, productCode: codeDigits }
       if (!navigatedRef.current) {
         navigatedRef.current = true
-        navigate('/warranty-success', { replace: true, state: { email, emailSent } })
+        navigate('/warranty-success', { replace: true, state: { email, emailSent, details } })
       }
     } catch {
       clearTimeout(fallback)
       if (!navigatedRef.current) {
         navigatedRef.current = true
-        navigate('/warranty-success', { replace: true, state: { email, emailSent: false } })
+        const details = { name, email, phoneModel, mobile, country, productType, purchaseDate, expiryDate, productCode: codeDigits }
+        navigate('/warranty-success', { replace: true, state: { email, emailSent: false, details } })
       }
     }
   }
