@@ -12,6 +12,7 @@ import AdminUsers from './pages/AdminUsers'
 import AdminWarranties from './pages/AdminWarranties'
 import AdminDashboard from './pages/AdminDashboard'
 import PartnerDashboard from './pages/PartnerDashboard'
+import PartnerWarranties from './pages/PartnerWarranties'
 import ChangePassword from './pages/ChangePassword'
 // Removed policy pages in favor of inline drawers on WarrantyRegister
 import { me, getRole } from './lib/auth'
@@ -144,7 +145,7 @@ export default function App() {
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/owner/users" element={<PrivateRoute><OwnerRoute><AdminUsers /></OwnerRoute></PrivateRoute>} />
           <Route path="/owner/warranties" element={<PrivateRoute><OwnerRoute><AdminWarranties /></OwnerRoute></PrivateRoute>} />
-          <Route path="/partner/warranties" element={<PrivateRoute><PartnerRoute><AdminWarranties /></PartnerRoute></PrivateRoute>} />
+          <Route path="/partner/warranties" element={<PrivateRoute><PartnerRoute><PartnerWarranties /></PartnerRoute></PrivateRoute>} />
           <Route path="/owner/dashboard" element={<PrivateRoute><OwnerRoute><AdminDashboard /></OwnerRoute></PrivateRoute>} />
           <Route path="/partner/dashboard" element={<PrivateRoute><PartnerRoute><PartnerDashboard /></PartnerRoute></PrivateRoute>} />
           <Route path="/change-password" element={<PrivateRoute><OwnerRoute><ChangePassword /></OwnerRoute></PrivateRoute>} />
