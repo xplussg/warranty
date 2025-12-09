@@ -25,6 +25,16 @@ export default function PartnerWarranties() {
     await onSearch()
   }
 
+  function fmtDateOnly(v: any) {
+    const t = String(v || '').trim()
+    if (!t) return ''
+    const m = t.match(/^(\d{4}-\d{2}-\d{2})/)
+    return m ? m[1] : t
+  }
+  function show(v: any) {
+    const t = String(v || '').trim()
+    return t ? t : '—'
+  }
   function withinExpiry(w: any) {
     const t = String(w.status || '').toLowerCase()
     if (t.includes('claim')) return false
@@ -41,53 +51,79 @@ export default function PartnerWarranties() {
     }
     return false
   }
+
   return (
     <section className="container py-12">
-      <h2 className="text-2xl font-semibold mb-6">Records</h2>
-      <div className="flex items-center gap-3 mb-3">
+      <h2 className="page-title mb-6">Warranty Registrations</h2>
+
+      <div className="flex items-center gap-3 mb-3 justify-between">
         <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Enter name / email / phone" value={q} onChange={e => setQ(e.target.value)} />
         <button className="px-4 py-2 rounded-md border border-slate-300" onClick={() => onSearch()}>Search</button>
-        <span className="text-sm text-slate-600">Show {pageSize} entries · Total {total}</span>
       </div>
-      {items.length > 0 && (
-      <table className="w-full text-sm border border-slate-200">
+
+      {total === 0 && (
+        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          Enter a search term to view warranties.
+        </div>
+      )}
+
+      <table className="w-full text-xs border border-slate-200 text-[#6B6B6B]">
         <thead>
           <tr className="bg-slate-50">
-            <th className="p-2 border">ID</th>
-            <th className="p-2 border">Name</th>
-            <th className="p-2 border">Email</th>
-            <th className="p-2 border">Phone Model</th>
-            <th className="p-2 border">Mobile</th>
-            <th className="p-2 border">Product Type</th>
-            <th className="p-2 border">Purchase Date</th>
-            <th className="p-2 border">Expiry Date</th>
-            <th className="p-2 border">Product Code</th>
-            <th className="p-2 border">Date of Registration</th>
-            <th className="p-2 border">Action</th>
-            <th className="p-2 border">Claim Details</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">ID</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Customer</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Phone Model</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Country</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Product Type</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Coverage BUY/EXP</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Product Code</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Date of Registration</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Action</th>
+            <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Claim By/On</th>
           </tr>
         </thead>
         <tbody>
           {items.map((w) => (
             <tr key={w.id}>
               <td className="p-2 border">{w.id}</td>
-              <td className="p-2 border">{w.name}</td>
-              <td className="p-2 border">{w.email}</td>
-              <td className="p-2 border">{w.phoneModel}</td>
-              <td className="p-2 border">{w.mobile}</td>
-              <td className="p-2 border">{w.productType}</td>
-              <td className="p-2 border">{w.purchaseDate}</td>
-              <td className="p-2 border">{w.expiryDate}</td>
-              <td className="p-2 border">{w.productCode}</td>
-              <td className="p-2 border">{w.createdAt}</td>
-              <td className="p-2 border"><button className="px-2 py-1 border rounded" disabled={!withinExpiry(w)} onClick={() => onClaim(w.id)}>{w.status === 'Claimed' ? 'Claimed' : 'Claim'}</button></td>
-              <td className="p-2 border">{w.claimedBy ? `${w.claimedBy}` : ''}</td>
-              <td className="p-2 border">{w.claimedAt ? w.claimedAt : ''}</td>
+              <td className="p-2 border">
+                <div className="leading-tight">
+                  <div className="font-medium">{show(w.name)}</div>
+                  <div className="text-xs">{show(w.email)}</div>
+                  <div className="text-xs">{show(w.mobile)}</div>
+                </div>
+              </td>
+              <td className="p-2 border">{show(w.phoneModel)}</td>
+              <td className="p-2 border">{show(w.country)}</td>
+              <td className="p-2 border">{show(w.productType)}</td>
+              <td className="p-2 border" style={{ fontFamily: 'Roboto Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
+                <div className="leading-tight">
+                  <div className="text-xs">{fmtDateOnly(w.purchaseDate)}</div>
+                  <div className={`text-xs ${withinExpiry(w) ? 'text-emerald-700' : 'text-red-700'}`}>{fmtDateOnly(w.expiryDate)}</div>
+                </div>
+              </td>
+              <td className="p-2 border" style={{ fontFamily: 'Roboto Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{show(w.productCode)}</td>
+              <td className="p-2 border">{show(w.createdAt)}</td>
+              <td className="p-2 border">
+                <span
+                  aria-label={w.status === 'Claimed' ? 'Claimed' : 'Claim'}
+                  title={w.status === 'Claimed' ? 'Claimed' : 'Claim'}
+                  onClick={() => { if (w.status !== 'Claimed' && withinExpiry(w)) onClaim(w.id) }}
+                  className={`cursor-pointer ${w.status === 'Claimed' || !withinExpiry(w) ? 'text-slate-400' : 'hover:text-emerald-700'}`}
+                >
+                  {w.status === 'Claimed' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  )}
+                </span>
+              </td>
+              <td className="p-2 border">{w.claimedBy ? `${w.claimedBy}` : ''}{w.claimedAt ? ` / ${w.claimedAt}` : ''}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      )}
+
       <div className="mt-3 flex items-center gap-3">
         <button className="px-2 py-1 border rounded" disabled={page<=1} onClick={() => {
           setPage(p => {
@@ -105,6 +141,7 @@ export default function PartnerWarranties() {
           })
         }}>Next</button>
       </div>
+
       {message && <div className="mt-3 text-sm text-slate-600">{message}</div>}
       <div className="mt-8">
         <a className="rounded-md border border-slate-300 px-4 py-2 inline-block" href="/partner/dashboard">Return</a>
