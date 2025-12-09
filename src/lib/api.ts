@@ -163,11 +163,10 @@ export async function deleteCode(id: number) {
 
 export async function searchWarrantiesByEmail(email: string) {
   const clean = email.trim()
-  const pattern = `%${clean}%`
   const { data, count, error } = await supabase
     .from('warranty_registrations')
     .select('*', { count: 'exact' })
-    .ilike('email', pattern)
+    .ilike('email', clean)
 
   if (error) return { items: [], count: 0 }
 
