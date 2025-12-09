@@ -9,11 +9,11 @@ export default function PartnerWarranties() {
   const [pageSize] = useState(20)
   const [total, setTotal] = useState(0)
 
-  async function onSearch() {
+  async function onSearch(nextPage?: number) {
     const query = q.trim()
     if (!query) { setItems([]); setTotal(0); setMessage('Enter name / email / phone'); return }
     setMessage('')
-    const res = await searchWarranties(query, page, pageSize)
+    const res = await searchWarranties(query, typeof nextPage === 'number' ? nextPage : page, pageSize)
     const list = res.items || []
     setItems(list)
     setTotal(res.total || 0)
@@ -46,7 +46,7 @@ export default function PartnerWarranties() {
       <h2 className="text-2xl font-semibold mb-6">Records</h2>
       <div className="flex items-center gap-3 mb-3">
         <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Enter name / email / phone" value={q} onChange={e => setQ(e.target.value)} />
-        <button className="px-4 py-2 rounded-md border border-slate-300" onClick={onSearch}>Search</button>
+        <button className="px-4 py-2 rounded-md border border-slate-300" onClick={() => onSearch()}>Search</button>
         <span className="text-sm text-slate-600">Show {pageSize} entries · Total {total}</span>
       </div>
       {items.length > 0 && (
@@ -89,9 +89,21 @@ export default function PartnerWarranties() {
       </table>
       )}
       <div className="mt-3 flex items-center gap-3">
-        <button className="px-2 py-1 border rounded" disabled={page<=1} onClick={() => setPage(p => Math.max(1, p-1))}>Prev</button>
+        <button className="px-2 py-1 border rounded" disabled={page<=1} onClick={() => {
+          setPage(p => {
+            const np = Math.max(1, p-1)
+            setTimeout(() => { onSearch(np) }, 0)
+            return np
+          })
+        }}>Prev</button>
         <span>Page {page}</span>
-        <button className="px-2 py-1 border rounded" disabled={(page*pageSize)>=total} onClick={() => setPage(p => p+1)}>Next</button>
+        <button className="px-2 py-1 border rounded" disabled={(page*pageSize)>=total} onClick={() => {
+          setPage(p => {
+            const np = p + 1
+            setTimeout(() => { onSearch(np) }, 0)
+            return np
+          })
+        }}>Next</button>
       </div>
       {message && <div className="mt-3 text-sm text-slate-600">{message}</div>}
       <div className="mt-8">

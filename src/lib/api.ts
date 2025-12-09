@@ -241,7 +241,7 @@ export async function searchWarranties(q = '', page = 1, pageSize = 20) {
   if (q) {
     const like = `%${q}%`
     if (role === 'partner') {
-      query = query.or(`name.ilike.${like},email.ilike.${like},mobile.ilike.${like}`)
+      query = query.or(`name.ilike.${q},email.ilike.${q},mobile.ilike.${q}`)
     } else {
       query = query.or(`name.ilike.${like},email.ilike.${like},mobile.ilike.${like},phone_model.ilike.${like},product_code.ilike.${like},country.ilike.${like},product_type.ilike.${like}`)
     }
