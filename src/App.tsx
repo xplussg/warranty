@@ -2,7 +2,6 @@ import { Route, Routes, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
-import CheckWarranty from './pages/CheckWarranty'
 import WarrantyRegister from './pages/WarrantyRegister'
 import WarrantySuccess from './pages/WarrantySuccess'
 import SupportLocation from './pages/SupportLocation'
@@ -136,7 +135,7 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<WarrantyRegister />} />
-          <Route path="/check-warranty" element={<CheckWarranty />} />
+          <Route path="/check-warranty" element={<Navigate to="/warranty-register" replace />} />
           <Route path="/warranty-register" element={<WarrantyRegister />} />
           <Route path="/warranty-success" element={<WarrantySuccess />} />
           <Route path="/support-location" element={<SupportLocation />} />

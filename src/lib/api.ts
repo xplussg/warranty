@@ -94,8 +94,19 @@ export async function registerWarranty(data: any) {
   try {
     setTimeout(async () => {
       try {
+        const details = {
+          name: row.name,
+          email: row.email,
+          mobile: row.mobile,
+          phoneModel: row.phone_model,
+          country: row.country,
+          productType: row.product_type,
+          purchaseDate: row.purchase_date,
+          expiryDate: row.expiry_date,
+          productCode: row.product_code
+        }
         const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
-          body: { to: row.email, details: row }
+          body: { to: row.email, details }
         })
         if (fnErr || !resp) {
           const env = (import.meta as any).env || {}
@@ -105,7 +116,7 @@ export async function registerWarranty(data: any) {
             await fetch(`${base}/functions/v1/warranty-email`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'apikey': anon },
-              body: JSON.stringify({ to: row.email, details: row })
+              body: JSON.stringify({ to: row.email, details })
             }).catch(() => {})
           }
         }
@@ -115,7 +126,7 @@ export async function registerWarranty(data: any) {
           await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to: row.email, details: row })
+            body: JSON.stringify({ to: row.email, details })
           }).catch(() => {})
         } catch {}
       } catch {}

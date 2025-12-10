@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabase'
 
 const nav = [
   { to: '/warranty-register', label: 'Warranty Registration' },
-  { to: '/check-warranty', label: 'Check Warranty' },
   { to: '/support-location', label: 'Support Location' }
 ]
 
