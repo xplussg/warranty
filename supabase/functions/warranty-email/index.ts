@@ -16,7 +16,7 @@ export default async function handler(req: Request): Promise<Response> {
     const to = String(payload?.to || '').trim()
     if (!to) return new Response(JSON.stringify({ error: 'Missing recipient' }), { status: 400 })
     const details = payload?.details || {}
-    const subject = 'XPLUS Warranty Registration Successful'
+    const subject = 'XPLUS Warranty Registration Confirmation'
     const html = renderHtml(details)
 
     const apiKey = Deno.env.get('RESEND_API_KEY') || ''
@@ -56,31 +56,54 @@ export default async function handler(req: Request): Promise<Response> {
 }
 
 function renderHtml(d: any): string {
-  const get = (a: any, b: any) => String((a ?? b) ?? '').trim()
-  const brandCss = 'font-family:Montserrat,sans-serif;color:#4A0A0E;background:#fff;'
-  const cardCss = 'max-width:720px;margin:0 auto;background:#FFFFFF;border-radius:16px;border:1px solid #FFCDD2;padding:24px;'
-  const headCss = 'font-family:Montserrat,sans-serif;font-size:22px;color:#D32F2F;margin:0 0 8px 0;'
-  const subCss = 'font-size:14px;line-height:1.8;color:#6B6B6B;margin:0 0 16px 0;'
-  const barCss = 'background:#D32F2F;color:#fff;padding:12px 16px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center;'
-  const rowLabel = 'width:30%;padding:12px;border-top:1px solid #FFCDD2;background:#FFEBEE;font-weight:600;color:#4A0A0E;'
-  const rowValue = 'padding:12px;border-top:1px solid #FFCDD2;'
-  const promiseCss = 'margin-top:16px;padding:12px;border:1px solid #FFCDD2;border-radius:10px;background:#FFF7F7;color:#4A0A0E;font-size:14px;'
-  const rows = [
-    ['Name', get(d.name, d.name)],
-    ['Email', get(d.email, d.email)],
-    ['Mobile', get(d.mobile, d.mobile)],
-    ['Phone Model', get(d.phoneModel, d.phone_model)],
-    ['Country', get(d.country, d.country)],
-    ['Product Type', get(d.productType, d.product_type)],
-    ['Purchase Date', get(d.purchaseDate, d.purchase_date)],
-    ['Expiry Date', get(d.expiryDate, d.expiry_date)],
-    ['Product Code', get(d.productCode, d.product_code)],
+  const fmt = (v: any) => String(v ?? '').trim()
+  const items: [string, string][] = [
+    ['Name', fmt(d.name)],
+    ['Email', fmt(d.email)],
+    ['Mobile', fmt(d.mobile)],
+    ['Phone Model', fmt(d.phone_model ?? d.phoneModel)],
+    ['Country', fmt(d.country)],
+    ['Product Type', fmt(d.product_type ?? d.productType)],
+    ['Purchase Date', fmt(d.purchase_date ?? d.purchaseDate)],
+    ['Expiry Date', fmt(d.expiry_date ?? d.expiryDate)],
+    ['Product Code', fmt(d.product_code ?? d.productCode)],
   ]
-    .filter(([, v]) => v.length > 0)
-    .map(([k, v]) => `<tr><td style="${rowLabel}">${escapeHtml(String(k))}</td><td style="${rowValue}">${escapeHtml(String(v))}</td></tr>`)
+  const rows = items
+    .filter(([_, v]) => v.length > 0)
+    .map(([k, v]) => `<tr><td style="padding:10px;border:1px solid #f1d5d7;background:#fee8ea;font-weight:600;color:#4a0a0e">${escapeHtml(k)}</td><td style="padding:10px;border:1px solid #f1d5d7">${escapeHtml(v)}</td></tr>`) 
     .join('')
-  const html = '<div style="'+brandCss+'">\n  <div style="'+cardCss+'">\n    <h1 style="'+headCss+'">Warranty Registration Successful</h1>\n    <p style="'+subCss+'">Your XPLUS warranty has been activated.</p>\n    <div style="'+barCss+'"><strong>Registration Details</strong><span style="font-weight:600">XPLUS</span></div>\n    <table style="width:100%;border-collapse:collapse;border:1px solid #FFCDD2;border-radius:0 0 12px 12px;overflow:hidden"><tbody>'+rows+'</tbody></table>\n    <div style="'+promiseCss+'"><div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div>100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div>\n  </div>\n</div>'
-  return '<!doctype html><html><body style="margin:0;padding:0;background:#fff">'+html+'</body></html>'
+  const logo = 'https://www.xplus.com.sg/xplus.png'
+  return `<!doctype html>
+  <html>
+  <body style="margin:0;background:#f8f9fb;font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f9fb;padding:24px 0">
+      <tr><td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #f1d5d7;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.08)">
+          <tr>
+            <td style="background:#d51015;color:#ffffff;padding:16px 20px">
+              <table width="100%" cellspacing="0" cellpadding="0"><tr>
+                <td style="vertical-align:middle"><img src="${logo}" alt="XPLUS" width="120" style="display:block" /></td>
+                <td align="right" style="vertical-align:middle;font-size:18px;font-weight:600">Warranty Confirmation</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 20px">
+              <h2 style="margin:0 0 10px;color:#a10e11;font-size:22px">Thank you for registering</h2>
+              <p style="margin:0 0 16px;color:#333">Your XPLUS warranty has been successfully activated. Keep this email for your records.</p>
+              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #f1d5d7">${rows}</table>
+              <div style="margin-top:16px;padding:12px;border:1px solid #f1d5d7;border-radius:8px;background:#fff7f7;color:#4a0a0e">
+                <div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div>
+                <div style="font-size:14px;line-height:1.5">100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div>
+              </div>
+              <p style="margin-top:16px;font-size:13px;color:#555">If anything looks incorrect, reply to this email and our team will assist you.</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`
 }
 
 function escapeHtml(s: string): string {
