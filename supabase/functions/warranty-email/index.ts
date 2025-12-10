@@ -70,29 +70,29 @@ function renderHtml(d: any): string {
   ]
   const rows = items
     .filter(([_, v]) => v.length > 0)
-    .map(([k, v]) => `<tr><td style="padding:10px;border:1px solid #f1d5d7;background:#fee8ea;font-weight:600;color:#4a0a0e">${escapeHtml(k)}</td><td style="padding:10px;border:1px solid #f1d5d7">${escapeHtml(v)}</td></tr>`) 
+    .map(([k, v]) => `<tr><td style="width:30%;padding:12px;border-top:1px solid #FFCDD2;background:#FFEBEE;font-weight:600;color:#4A0A0E">${escapeHtml(k)}</td><td style="padding:12px;border-top:1px solid #FFCDD2">${escapeHtml(v)}</td></tr>`)
     .join('')
   const logo = 'https://www.xplus.com.sg/xplus.png'
   return `<!doctype html>
   <html>
-  <body style="margin:0;background:#f8f9fb;font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f9fb;padding:24px 0">
+  <body style="margin:0;background:linear-gradient(135deg, #fffcfc 0%, #FFEBEE 100%);font-family:Montserrat,system-ui,-apple-system,Segoe UI,Roboto;color:#4A0A0E">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 0">
       <tr><td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #f1d5d7;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.08)">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#FFFFFF;border:1px solid #FFCDD2;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.15)">
           <tr>
-            <td style="background:#d51015;color:#ffffff;padding:16px 20px">
+            <td style="background:#D32F2F;color:#FFFFFF;padding:12px 16px">
               <table width="100%" cellspacing="0" cellpadding="0"><tr>
                 <td style="vertical-align:middle"><img src="${logo}" alt="XPLUS" width="120" style="display:block" /></td>
-                <td align="right" style="vertical-align:middle;font-size:18px;font-weight:600">Warranty Confirmation</td>
+                <td align="right" style="vertical-align:middle;font-size:16px;font-weight:600">Registration Details</td>
               </tr></table>
             </td>
           </tr>
           <tr>
             <td style="padding:24px 20px">
-              <h2 style="margin:0 0 10px;color:#a10e11;font-size:22px">Thank you for registering</h2>
-              <p style="margin:0 0 16px;color:#333">Your XPLUS warranty has been successfully activated. Keep this email for your records.</p>
-              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #f1d5d7">${rows}</table>
-              <div style="margin-top:16px;padding:12px;border:1px solid #f1d5d7;border-radius:8px;background:#fff7f7;color:#4a0a0e">
+              <h2 style="margin:0 0 10px;color:#D32F2F;font-size:22px">Warranty Registration Successful</h2>
+              <p style="margin:0 0 16px;color:#6B6B6B;font-size:15px;line-height:1.8">Your XPLUS warranty has been activated. Keep this email for your records.</p>
+              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows}</table>
+              <div style="margin-top:16px;padding:12px;border:1px solid #FFCDD2;border-radius:10px;background:#FFF7F7;color:#4A0A0E">
                 <div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div>
                 <div style="font-size:14px;line-height:1.5">100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div>
               </div>
