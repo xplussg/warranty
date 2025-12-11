@@ -70,7 +70,8 @@ export default function WarrantyRegister() {
     const fallback = setTimeout(() => {
       if (!navigatedRef.current) {
         navigatedRef.current = true
-        navigate('/warranty-success', { replace: true, state: { email, emailSent: false } })
+        const details = { name, email, phoneModel, mobile, country, productType, purchaseDate, expiryDate, productCode: codeDigits }
+        navigate('/warranty-success', { replace: true, state: { email, emailSent: false, details } })
       }
     }, 8000)
     try {

@@ -53,10 +53,66 @@ export async function registerWarranty(data: any) {
     expiryDate: data.expiryDate,
     productCode: cleanCode
   }
-  const { data: result, error } = await (supabase as any).functions.invoke('register-warranty', { body: payload })
-  if (error) return { error: error.message }
-  if ((result as any)?.error) return { error: String((result as any).error) }
-  return { ok: true, emailSent: Boolean((result as any)?.emailSent) }
+  try {
+    const { data: result } = await (supabase as any).functions.invoke('register-warranty', { body: payload })
+    if ((result as any)?.error) return { error: String((result as any).error) }
+    return { ok: true, emailSent: Boolean((result as any)?.emailSent) }
+  } catch (e: any) {
+    // Fallback: perform client-side insert and invoke existing email function
+    // 1) Validate code exists
+    const { data: codeData } = await supabase.from('product_codes').select('id').eq('code', cleanCode).maybeSingle()
+    if (!codeData) return { error: 'Invalid product code' }
+    // 2) Prevent duplicate
+    const { data: existing } = await supabase.from('warranty_registrations').select('id').eq('product_code', cleanCode).maybeSingle()
+    if (existing) return { error: 'Product code already registered' }
+    // 3) Insert
+    const row = {
+      name: payload.name,
+      email: payload.email,
+      phone_model: payload.phoneModel,
+      mobile: payload.mobile,
+      country: payload.country,
+      product_type: payload.productType,
+      purchase_date: payload.purchaseDate,
+      expiry_date: payload.expiryDate,
+      product_code: payload.productCode,
+      status: 'Active',
+      created_at: new Date().toISOString()
+    }
+    const { error: insertError } = await supabase.from('warranty_registrations').insert([row])
+    if (insertError) return { error: insertError.message }
+    // 4) Email via existing function
+    let emailSent = false
+    try {
+      const details = {
+        name: row.name,
+        email: row.email,
+        mobile: row.mobile,
+        phoneModel: row.phone_model,
+        country: row.country,
+        productType: row.product_type,
+        purchaseDate: row.purchase_date,
+        expiryDate: row.expiry_date,
+        productCode: row.product_code
+      }
+      const { data: resp } = await (supabase as any).functions.invoke('warranty-email', { body: { to: row.email, details } })
+      emailSent = Boolean(resp && (resp as any).ok)
+      if (!emailSent) {
+        const env = (import.meta as any).env || {}
+        const base = env.VITE_SUPABASE_URL
+        const anon = env.VITE_SUPABASE_ANON_KEY
+        if (base && anon) {
+          const r = await fetch(`${base}/functions/v1/warranty-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': anon },
+            body: JSON.stringify({ to: row.email, details })
+          })
+          emailSent = r.ok
+        }
+      }
+    } catch {}
+    return { ok: true, emailSent }
+  }
 }
 
 export async function listCodes(q = '', page = 1, pageSize = 20) {
