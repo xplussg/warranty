@@ -41,99 +41,22 @@ export async function checkCode(code: string): Promise<CodeCheck> {
 }
 
 export async function registerWarranty(data: any) {
-  // Client-side validation logic similar to server
   const cleanCode = String(data.productCode || '').toUpperCase().replace(/\s+/g, '')
-  
-  // 1. Check if code exists in product_codes
-  const { data: codeData, error: codeError } = await supabase
-    .from('product_codes')
-    .select('id')
-    .eq('code', cleanCode)
-    .maybeSingle()
-
-  if (codeError || !codeData) {
-    return { error: 'Invalid product code' }
-  }
-
-  // 2. Check if already registered
-  const { data: existing } = await supabase
-    .from('warranty_registrations')
-    .select('id')
-    .eq('product_code', cleanCode)
-    .maybeSingle()
-
-  if (existing) {
-    return { error: 'Product code already registered' }
-  }
-
-  // 3. Insert
-  // Map camelCase to snake_case
-  const row = {
+  const payload = {
     name: data.name,
     email: data.email,
-    phone_model: data.phoneModel,
+    phoneModel: data.phoneModel,
     mobile: data.mobile,
     country: data.country,
-    product_type: data.productType,
-    purchase_date: data.purchaseDate,
-    expiry_date: data.expiryDate,
-    product_code: cleanCode,
-    status: 'Active',
-    created_at: new Date().toISOString()
+    productType: data.productType,
+    purchaseDate: data.purchaseDate,
+    expiryDate: data.expiryDate,
+    productCode: cleanCode
   }
-
-  const { error: insertError } = await supabase
-    .from('warranty_registrations')
-    .insert([row])
-
-  if (insertError) {
-    return { error: insertError.message }
-  }
-
-  // 4. Send confirmation email (fire-and-forget; do NOT block UI)
-  try {
-    setTimeout(async () => {
-      try {
-        const details = {
-          name: row.name,
-          email: row.email,
-          mobile: row.mobile,
-          phoneModel: row.phone_model,
-          country: row.country,
-          productType: row.product_type,
-          purchaseDate: row.purchase_date,
-          expiryDate: row.expiry_date,
-          productCode: row.product_code
-        }
-        const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
-          body: { to: row.email, details }
-        })
-        if (fnErr || !resp) {
-          const env = (import.meta as any).env || {}
-          const base = env.VITE_SUPABASE_URL
-          const anon = env.VITE_SUPABASE_ANON_KEY
-          if (base && anon) {
-            await fetch(`${base}/functions/v1/warranty-email`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'apikey': anon },
-              body: JSON.stringify({ to: row.email, details })
-            }).catch(() => {})
-          }
-        }
-        // Also fire shared-hosting endpoint if available (same-origin)
-        try {
-          const endpoint = 'https://xplus.com.sg/api/warranty-register.php'
-          await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to: row.email, details })
-          }).catch(() => {})
-        } catch {}
-      } catch {}
-    }, 0)
-  } catch {}
-
-  return { ok: true }
+  const { data: result, error } = await (supabase as any).functions.invoke('register-warranty', { body: payload })
+  if (error) return { error: error.message }
+  if ((result as any)?.error) return { error: String((result as any).error) }
+  return { ok: true, emailSent: Boolean((result as any)?.emailSent) }
 }
 
 export async function listCodes(q = '', page = 1, pageSize = 20) {
