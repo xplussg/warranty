@@ -1267,6 +1267,107 @@ app.post('/api/migrate/json-to-db', requireRole(['admin']), async (req, res) => 
   } finally { client.release() }
 })
 
+app.post('/api/warranty/register', async (req, res) => {
+  const body = req.body as any
+  const cleanCode = String(body.productCode || '').toUpperCase().replace(/\s+/g, '')
+  if (!cleanCode) return res.status(400).json({ error: 'Invalid product code' })
+  const name = String(body.name || '')
+  const email = String(body.email || '')
+  const phone_model = String(body.phoneModel || '')
+  const mobile = String(body.mobile || '')
+  const country = String(body.country || '')
+  const product_type = String(body.productType || '')
+  const purchase_date = body.purchaseDate || null
+  const expiry_date = body.expiryDate || null
+
+  if (useSupabase) {
+    const { data: codeData, error: codeError } = await supabaseAdmin
+      .from('product_codes')
+      .select('id')
+      .eq('code', cleanCode)
+      .maybeSingle()
+    if (codeError || !codeData) return res.status(400).json({ error: 'Invalid product code' })
+    const { data: existing } = await supabaseAdmin
+      .from('warranty_registrations')
+      .select('id')
+      .eq('product_code', cleanCode)
+      .maybeSingle()
+    if (existing) return res.status(400).json({ error: 'Product code already registered' })
+    const row = { name, email, phone_model, mobile, country, product_type, purchase_date, expiry_date, product_code: cleanCode, status: 'Active', created_at: new Date().toISOString() }
+    const { data: ins, error: insertError } = await supabaseAdmin
+      .from('warranty_registrations')
+      .insert([row])
+      .select('id')
+      .single()
+    if (insertError) return res.status(500).json({ error: insertError.message })
+    const details = { name, email, mobile, phoneModel: phone_model, country, productType: product_type, purchaseDate: purchase_date, expiryDate: expiry_date, productCode: cleanCode }
+    const apiKey = String(process.env.RESEND_API_KEY || '')
+    async function send(from: string) {
+      const subject = 'XPLUS Warranty Registration Confirmation'
+      const html = renderEmailHtml(details)
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to: [email], subject, html })
+      })
+      return r
+    }
+    let emailSent = false
+    if (apiKey) {
+      let r = await send('XPLUS <no-reply@xplus.com.sg>')
+      if (!r.ok) r = await send('XPLUS <onboarding@resend.dev>')
+      emailSent = r.ok
+      if (!emailSent) {
+        setTimeout(async () => { try { await send('XPLUS <no-reply@xplus.com.sg>') } catch {} }, 2000)
+        setTimeout(async () => { try { await send('XPLUS <no-reply@xplus.com.sg>') } catch {} }, 5000)
+      }
+    }
+    return res.json({ ok: true, id: ins?.id, emailSent })
+  }
+  if (!pool) {
+    const codes = await readCodes()
+    const exists = codes.find(c => String(c.code || '').replace(/\s|-/g, '').toUpperCase() === cleanCode)
+    if (!exists) return res.status(400).json({ error: 'Invalid product code' })
+    const raw = JSON.parse(fs.readFileSync(warrantiesFile, 'utf8'))
+    if ((raw.warranties || []).some((w: any) => String(w.productCode || '').toUpperCase().replace(/\s+/g, '') === cleanCode)) return res.status(400).json({ error: 'Product code already registered' })
+    const now = new Date().toISOString()
+    const id = (raw.warranties || []).length ? Math.max(...raw.warranties.map((w: any) => Number(w.id) || 0)) + 1 : 1
+    raw.warranties.push({ id, name, email, phoneModel: phone_model, mobile, country, productType: product_type, purchaseDate, expiryDate, productCode: cleanCode, status: 'Active', createdAt: now })
+    fs.writeFileSync(warrantiesFile, JSON.stringify(raw, null, 2))
+    return res.json({ ok: true, id, emailSent: false })
+  }
+  const r1 = await pool.query('select id from product_codes where code=$1 limit 1', [cleanCode])
+  if (r1.rowCount === 0) return res.status(400).json({ error: 'Invalid product code' })
+  const r2 = await pool.query('select id from warranty_registrations where product_code=$1 limit 1', [cleanCode])
+  if (r2.rowCount > 0) return res.status(400).json({ error: 'Product code already registered' })
+  const now = new Date().toISOString()
+  const r3 = await pool.query('insert into warranty_registrations (name,email,phone_model,mobile,country,product_type,purchase_date,expiry_date,product_code,status,created_at) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning id', [name, email, phone_model, mobile, country, product_type, purchase_date || null, expiry_date || null, cleanCode, 'Active', now])
+  const id = r3.rows[0].id
+  return res.json({ ok: true, id, emailSent: false })
+})
+
+function renderEmailHtml(d: any): string {
+  const fmt = (v: any) => String(v ?? '').trim()
+  const items: [string, string][] = [
+    ['Name', fmt(d.name)],
+    ['Email', fmt(d.email)],
+    ['Mobile', fmt(d.mobile)],
+    ['Phone Model', fmt(d.phoneModel)],
+    ['Country', fmt(d.country)],
+    ['Product Type', fmt(d.productType)],
+    ['Purchase Date', fmt(d.purchaseDate)],
+    ['Expiry Date', fmt(d.expiryDate)],
+    ['Product Code', fmt(d.productCode)]
+  ]
+  const rows = items.filter(([_, v]) => v.length > 0).map(([k, v]) => `<tr><td style="width:30%;padding:12px;border-top:1px solid #FFCDD2;background:#FFEBEE;font-weight:600;color:#4A0A0E">${escapeHtml(String(k))}</td><td style="padding:12px;border-top:1px solid #FFCDD2">${escapeHtml(String(v))}</td></tr>`).join('')
+  const logo = 'https://www.xplus.com.sg/xplus.png'
+  return `<!doctype html><html><body style="margin:0;background:linear-gradient(135deg, #fffcfc 0%, #FFEBEE 100%);font-family:Montserrat,system-ui,-apple-system,Segoe UI,Roboto;color:#4A0A0E"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 0"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#FFFFFF;border:1px solid #FFCDD2;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.15)"><tr><td style="background:#D32F2F;color:#FFFFFF;padding:12px 16px"><table width="100%" cellspacing="0" cellpadding="0"><tr><td style="vertical-align:middle"><img src="${logo}" alt="XPLUS" width="120" style="display:block" /></td><td align="right" style="vertical-align:middle;font-size:16px;font-weight:600">Registration Details</td></tr></table></td></tr><tr><td style="padding:24px 20px"><h2 style="margin:0 0 10px;color:#D32F2F;font-size:22px">Warranty Registration Successful</h2><p style="margin:0 0 16px;color:#6B6B6B;font-size:15px;line-height:1.8">Your XPLUS warranty has been activated. Keep this email for your records.</p><table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows}</table><div style="margin-top:16px;padding:12px;border:1px solid #FFCDD2;border-radius:10px;background:#FFF7F7;color:#4A0A0E"><div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div><div style="font-size:14px;line-height:1.5">100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div></div><p style="margin-top:16px;font-size:13px;color:#555">If anything looks incorrect, reply to this email and our team will assist you.</p></td></tr></table></td></tr></table></body></html>`
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
+}
+
 const port = Number(process.env.API_PORT || 5176)
 initDb().then(() => {
   app.listen(port, () => {

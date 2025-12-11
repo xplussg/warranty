@@ -41,33 +41,46 @@ export async function checkCode(code: string): Promise<CodeCheck> {
 }
 
 export async function registerWarranty(data: any) {
-  // Client-side validation logic similar to server
   const cleanCode = String(data.productCode || '').toUpperCase().replace(/\s+/g, '')
-  
-  // 1. Check if code exists in product_codes
+  const isLocal = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost'
+  if (isLocal) {
+    const port = ((import.meta as any).env?.VITE_API_PORT) || 5176
+    try {
+      const res = await fetch(`http://localhost:${port}/api/warranty/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productCode: cleanCode,
+          purchaseDate: data.purchaseDate,
+          expiryDate: data.expiryDate,
+          name: data.name,
+          email: data.email,
+          country: data.country,
+          phoneModel: data.phoneModel,
+          mobile: data.mobile,
+          productType: data.productType
+        })
+      })
+      const j = await res.json()
+      if (!res.ok || j.error) return { error: j.error || 'Registration failed' }
+      return { ok: true, emailSent: !!j.emailSent }
+    } catch (e: any) {
+      return { error: String(e?.message || e) }
+    }
+  }
+
   const { data: codeData, error: codeError } = await supabase
     .from('product_codes')
     .select('id')
     .eq('code', cleanCode)
     .maybeSingle()
-
-  if (codeError || !codeData) {
-    return { error: 'Invalid product code' }
-  }
-
-  // 2. Check if already registered
+  if (codeError || !codeData) return { error: 'Invalid product code' }
   const { data: existing } = await supabase
     .from('warranty_registrations')
     .select('id')
     .eq('product_code', cleanCode)
     .maybeSingle()
-
-  if (existing) {
-    return { error: 'Product code already registered' }
-  }
-
-  // 3. Insert
-  // Map camelCase to snake_case
+  if (existing) return { error: 'Product code already registered' }
   const row = {
     name: data.name,
     email: data.email,
@@ -81,16 +94,10 @@ export async function registerWarranty(data: any) {
     status: 'Active',
     created_at: new Date().toISOString()
   }
-
   const { error: insertError } = await supabase
     .from('warranty_registrations')
     .insert([row])
-
-  if (insertError) {
-    return { error: insertError.message }
-  }
-
-  // 4. Send confirmation email (fire-and-forget; do NOT block UI)
+  if (insertError) return { error: insertError.message }
   try {
     setTimeout(async () => {
       try {
@@ -105,34 +112,22 @@ export async function registerWarranty(data: any) {
           expiryDate: row.expiry_date,
           productCode: row.product_code
         }
-        const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', {
-          body: { to: row.email, details }
-        })
+        const { data: resp, error: fnErr } = await (supabase as any).functions.invoke('warranty-email', { body: { to: row.email, details } })
         if (fnErr || !resp) {
           const env = (import.meta as any).env || {}
           const base = env.VITE_SUPABASE_URL
           const anon = env.VITE_SUPABASE_ANON_KEY
           if (base && anon) {
-            await fetch(`${base}/functions/v1/warranty-email`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'apikey': anon },
-              body: JSON.stringify({ to: row.email, details })
-            }).catch(() => {})
+            await fetch(`${base}/functions/v1/warranty-email`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': anon }, body: JSON.stringify({ to: row.email, details }) }).catch(() => {})
           }
         }
-        // Also fire shared-hosting endpoint if available (same-origin)
         try {
           const endpoint = 'https://xplus.com.sg/api/warranty-register.php'
-          await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to: row.email, details })
-          }).catch(() => {})
+          await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: row.email, details }) }).catch(() => {})
         } catch {}
       } catch {}
     }, 0)
   } catch {}
-
   return { ok: true }
 }
 
