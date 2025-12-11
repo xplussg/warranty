@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 export default async function handler(req: Request): Promise<Response> {
   const cors = {
@@ -29,7 +30,6 @@ export default async function handler(req: Request): Promise<Response> {
     const url = Deno.env.get('PROJECT_URL') || Deno.env.get('SUPABASE_URL')
     const key = Deno.env.get('SERVICE_ROLE_KEY')
     if (!url || !key) return new Response(JSON.stringify({ error: 'Server not configured' }), { status: 500, headers: cors })
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
     const supabase = createClient(url!, key!)
 
     // Validate product code exists (support common storage variants)
@@ -185,4 +185,3 @@ function escapeHtml(s: string): string {
 // Ensure default export is picked by Supabase Edge runtime
 // deno-lint-ignore no-unused-vars
 export const serve = handler
-
