@@ -53,10 +53,59 @@ export async function registerWarranty(data: any) {
     expiryDate: data.expiryDate,
     productCode: cleanCode
   }
-  const { data: result, error } = await (supabase as any).functions.invoke('register-warranty', { body: payload })
-  if (error) return { error: error.message }
-  if ((result as any)?.error) return { error: String((result as any).error) }
-  return { ok: true, emailSent: Boolean((result as any)?.emailSent) }
+  try {
+    const { data: result, error } = await (supabase as any).functions.invoke('register-warranty', { body: payload })
+    if (!error && (result as any)?.ok) {
+      return { ok: true, emailSent: Boolean((result as any)?.emailSent) }
+    }
+  } catch {}
+  // Fallback: insert client-side and trigger email function directly
+  const { data: codeData, error: codeError } = await supabase
+    .from('product_codes')
+    .select('id')
+    .eq('code', cleanCode)
+    .maybeSingle()
+  if (codeError || !codeData) {
+    return { error: 'Invalid product code' }
+  }
+  const { data: existing } = await supabase
+    .from('warranty_registrations')
+    .select('id')
+    .eq('product_code', cleanCode)
+    .maybeSingle()
+  if (existing) {
+    return { error: 'Product code already registered' }
+  }
+  const row = {
+    name: payload.name,
+    email: payload.email,
+    phone_model: payload.phoneModel,
+    mobile: payload.mobile,
+    country: payload.country,
+    product_type: payload.productType,
+    purchase_date: payload.purchaseDate,
+    expiry_date: payload.expiryDate,
+    product_code: cleanCode,
+    status: 'Active',
+    created_at: new Date().toISOString()
+  }
+  const { error: insertError } = await supabase.from('warranty_registrations').insert([row])
+  if (insertError) return { error: insertError.message }
+  try {
+    const details = {
+      name: row.name,
+      email: row.email,
+      mobile: row.mobile,
+      phoneModel: row.phone_model,
+      country: row.country,
+      productType: row.product_type,
+      purchaseDate: row.purchase_date,
+      expiryDate: row.expiry_date,
+      productCode: row.product_code
+    }
+    await (supabase as any).functions.invoke('warranty-email', { body: { to: row.email, details } })
+  } catch {}
+  return { ok: true, emailSent: false }
 }
 
 export async function listCodes(q = '', page = 1, pageSize = 20) {
