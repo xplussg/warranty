@@ -232,7 +232,7 @@ export async function uploadWarranties(file: File): Promise<any> {
   })
 }
 
-export async function searchWarranties(q = '', page = 1, pageSize = 20) {
+export async function searchWarranties(q = '', page = 1, pageSize = 20, startDate = '', endDate = '', claimedBy = '') {
   const role = await getRole()
   if (role === 'partner' && !q.trim()) {
     return { items: [], total: 0, page, pageSize }
@@ -242,6 +242,16 @@ export async function searchWarranties(q = '', page = 1, pageSize = 20) {
     .from('warranty_registrations')
     .select('*', { count: 'exact' })
     .order('id', { ascending: true })
+
+  if (startDate) {
+    query = query.gte('claimed_at', startDate)
+  }
+  if (endDate) {
+    query = query.lte('claimed_at', endDate + 'T23:59:59')
+  }
+  if (claimedBy) {
+    query = query.ilike('claimed_by', `%${claimedBy}%`)
+  }
 
   if (q) {
     const like = `%${q}%`

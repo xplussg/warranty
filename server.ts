@@ -1301,7 +1301,7 @@ app.post('/api/warranty/register', async (req, res) => {
       .single()
     if (insertError) return res.status(500).json({ error: insertError.message })
     const details = { name, email, mobile, phoneModel: phone_model, country, productType: product_type, purchaseDate: purchase_date, expiryDate: expiry_date, productCode: cleanCode }
-    const apiKey = String(process.env.RESEND_API_KEY || '')
+    const apiKey = getResendApiKey()
     async function send(from: string) {
       const subject = 'XPLUS Warranty Registration Confirmation'
       const html = renderEmailHtml(details)
@@ -1379,3 +1379,15 @@ initDb().then(() => {
     console.log(`API listening on http://localhost:${port}`)
   })
 })
+function getResendApiKey(): string {
+  const envKey = String(process.env.RESEND_API_KEY || '').trim()
+  if (envKey) return envKey
+  try {
+    const p = path.join(process.cwd(), '.resend')
+    if (fs.existsSync(p)) {
+      const k = fs.readFileSync(p, 'utf8').trim()
+      if (k) return k
+    }
+  } catch {}
+  return ''
+}

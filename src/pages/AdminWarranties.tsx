@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { searchWarranties, deleteWarranty, claimWarranty, unclaimWarranty } from '../lib/api'
 import { getRole } from '../lib/auth'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default function AdminWarranties() {
   const [q, setQ] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [claimedBy, setClaimedBy] = useState('')
+  const [exporting, setExporting] = useState(false)
   const [role, setRole] = useState<string|null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -19,14 +25,55 @@ export default function AdminWarranties() {
   
 
   async function refresh() {
-    const j: any = await searchWarranties(q, page, pageSize)
+    const j: any = await searchWarranties(q, page, pageSize, startDate, endDate, claimedBy)
     if (j && j.error) { setItems([]); setTotal(0); return }
     setItems(j.items || [])
     setTotal(j.total || 0)
   }
 
-  useEffect(() => { refresh() }, [q, page, pageSize])
+  useEffect(() => { refresh() }, [q, page, pageSize, startDate, endDate, claimedBy])
   
+  async function exportPdf() {
+    setExporting(true)
+    try {
+      // Fetch all matching records (limit 10000 for safety)
+      const res: any = await searchWarranties(q, 1, 10000, startDate, endDate, claimedBy)
+      const list = res.items || []
+      
+      const doc = new jsPDF('l', 'mm', 'a4') // Landscape
+      doc.setFontSize(14)
+      doc.text('Warranty Registrations', 14, 15)
+      doc.setFontSize(10)
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 14, 20)
+      
+      const tableData = list.map((w: any) => [
+        w.id,
+        `${show(w.name)}\n${show(w.email)}\n${show(w.mobile)}`,
+        show(w.phoneModel),
+        show(w.country),
+        show(w.productType),
+        `${fmtDateOnly(w.purchaseDate)}\n${fmtDateOnly(w.expiryDate)}`,
+        show(w.productCode),
+        fmtDateTimeLocal(w.createdAt),
+        (w.claimedBy ? `${w.claimedBy}\n${fmtDateTimeLocal(w.claimedAt)}` : '-')
+      ])
+      
+      autoTable(doc, {
+        startY: 25,
+        head: [['ID', 'Customer', 'Model', 'Country', 'Product', 'Buy/Exp', 'Code', 'Reg Date', 'Claim By/On']],
+        body: tableData,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [211, 47, 47] } // Brand Red
+      })
+      
+      doc.save('warranties.pdf')
+    } catch (e) {
+      alert('Failed to export PDF')
+      console.error(e)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function onDelete(id: number) {
     if (!confirm('Are you sure you want to delete this warranty?')) return
@@ -83,9 +130,28 @@ export default function AdminWarranties() {
     <section className="container py-12">
       <h2 className="page-title mb-6">Warranty Registrations</h2>
       
-      <div className="flex items-center gap-3 mb-3 justify-between">
+      <div className="flex flex-wrap items-center gap-3 mb-3">
         <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Search" value={q} onChange={e => setQ(e.target.value)} />
-        {/* Upload CSV hidden */}
+        
+        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Claimed By (Email)" value={claimedBy} onChange={e => setClaimedBy(e.target.value)} style={{ width: 180 }} />
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium whitespace-nowrap">From:</label>
+          <input type="date" className="rounded-md border border-slate-300 px-3 py-2" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium whitespace-nowrap">To:</label>
+          <input type="date" className="rounded-md border border-slate-300 px-3 py-2" value={endDate} onChange={e => setEndDate(e.target.value)} />
+        </div>
+
+        {(startDate || endDate || claimedBy) && (
+          <button onClick={() => { setStartDate(''); setEndDate(''); setClaimedBy('') }} className="px-3 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50">Clear Filter</button>
+        )}
+        
+        <button onClick={exportPdf} disabled={exporting} className="ml-auto px-4 py-2 rounded-md bg-slate-800 text-white text-sm hover:bg-slate-700 disabled:opacity-50">
+          {exporting ? 'Exporting...' : 'Save as PDF'}
+        </button>
       </div>
       
       
