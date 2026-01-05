@@ -344,7 +344,15 @@ export async function getPartners() {
     console.error('getPartners error:', JSON.stringify(error, null, 2))
     return { error: error.message || 'Failed to fetch partners' }
   }
-  return { partners: data as { id: string; email: string; username: string; role: string; created_at: string }[] }
+  // Map partner_id back to id for frontend compatibility
+  const partners = (data || []).map((p: any) => ({
+    id: p.partner_id,
+    email: p.email,
+    username: p.username,
+    role: p.role,
+    created_at: p.created_at
+  }))
+  return { partners }
 }
 
 export async function createPartner(data: { email: string; username: string; password?: string }) {
