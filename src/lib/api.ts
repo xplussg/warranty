@@ -338,6 +338,15 @@ function mapWarranty(r: any) {
   }
 }
 
+export async function getPartners() {
+  const { data, error } = await supabase.rpc('get_partners')
+  if (error) {
+    console.error('getPartners error:', error)
+    return { error: error.message }
+  }
+  return { partners: data as { id: string; email: string; username: string; role: string; created_at: string }[] }
+}
+
 export async function createPartner(data: { email: string; username: string; password?: string }) {
   const { data: result, error } = await supabase.functions.invoke('create-partner', {
     body: data

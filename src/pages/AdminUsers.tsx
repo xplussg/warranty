@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createPartner, setUserRole } from '../lib/api'
+import { createPartner, setUserRole, getPartners } from '../lib/api'
 import { getRole } from '../lib/auth'
 
+function fmtDate(d: string) {
+  if (!d) return '-'
+  return new Date(d).toLocaleString()
+}
 
 export default function AdminUsers() {
   const navigate = useNavigate()
@@ -16,10 +20,24 @@ export default function AdminUsers() {
   const [currentRole, setCurrentRole] = useState<string | null>(null)
   const [ownerEmail, setOwnerEmail] = useState('')
   const [ownerUsername, setOwnerUsername] = useState('')
+  const [partners, setPartners] = useState<any[]>([])
 
   useEffect(() => {
-    ;(async () => { setCurrentRole(await getRole()) })()
+    ;(async () => { 
+      const r = await getRole()
+      setCurrentRole(r)
+      if (r === 'owner') {
+        loadPartners()
+      }
+    })()
   }, [])
+
+  async function loadPartners() {
+    const res = await getPartners()
+    if (res.partners) {
+      setPartners(res.partners)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,6 +63,7 @@ export default function AdminUsers() {
       setEmail('')
       setPassword('')
       setUsername('')
+      loadPartners() // Refresh list
     }
   }
 
@@ -69,6 +88,37 @@ export default function AdminUsers() {
         
         <div className="mb-4 text-xs text-slate-500 font-mono">
           Your Role: {currentRole || 'loading...'}
+        </div>
+
+        <div className="rounded-md border border-slate-200 p-6 bg-white shadow-sm mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">Partner Accounts</h3>
+            <button onClick={loadPartners} className="text-sm text-blue-600 hover:underline">Refresh</button>
+          </div>
+          {partners.length === 0 ? (
+            <div className="text-slate-500 text-sm">No partners found.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-slate-700 uppercase font-semibold">
+                  <tr>
+                    <th className="px-4 py-2">Username</th>
+                    <th className="px-4 py-2">Email</th>
+                    <th className="px-4 py-2">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {partners.map(p => (
+                    <tr key={p.id}>
+                      <td className="px-4 py-2 font-medium">{p.username || '-'}</td>
+                      <td className="px-4 py-2">{p.email}</td>
+                      <td className="px-4 py-2 text-slate-500">{fmtDate(p.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border border-slate-200 p-6 bg-white shadow-sm">
