@@ -341,8 +341,8 @@ function mapWarranty(r: any) {
 export async function getPartners() {
   const { data, error } = await supabase.rpc('get_partners')
   if (error) {
-    console.error('getPartners error:', error)
-    return { error: error.message }
+    console.error('getPartners error:', JSON.stringify(error, null, 2))
+    return { error: error.message || 'Failed to fetch partners' }
   }
   return { partners: data as { id: string; email: string; username: string; role: string; created_at: string }[] }
 }
