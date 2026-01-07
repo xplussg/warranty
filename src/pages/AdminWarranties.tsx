@@ -10,6 +10,8 @@ export default function AdminWarranties() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [claimedBy, setClaimedBy] = useState('')
+  const [sortBy, setSortBy] = useState('id')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [exporting, setExporting] = useState(false)
   const [role, setRole] = useState<string|null>(null)
   const [page, setPage] = useState(1)
@@ -25,19 +27,19 @@ export default function AdminWarranties() {
   
 
   async function refresh() {
-    const j: any = await searchWarranties(q, page, pageSize, startDate, endDate, claimedBy)
+    const j: any = await searchWarranties(q, page, pageSize, startDate, endDate, claimedBy, sortBy, sortOrder)
     if (j && j.error) { setItems([]); setTotal(0); return }
     setItems(j.items || [])
     setTotal(j.total || 0)
   }
 
-  useEffect(() => { refresh() }, [q, page, pageSize, startDate, endDate, claimedBy])
+  useEffect(() => { refresh() }, [q, page, pageSize, startDate, endDate, claimedBy, sortBy, sortOrder])
   
   async function exportPdf() {
     setExporting(true)
     try {
       // Fetch all matching records (limit 10000 for safety)
-      const res: any = await searchWarranties(q, 1, 10000, startDate, endDate, claimedBy)
+      const res: any = await searchWarranties(q, 1, 10000, startDate, endDate, claimedBy, sortBy, sortOrder)
       const list = res.items || []
       
       const doc = new jsPDF('l', 'mm', 'a4') // Landscape
@@ -126,6 +128,16 @@ export default function AdminWarranties() {
     return t ? t : '—'
   }
 
+  function handleSort(col: string) {
+    if (sortBy === col) setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortOrder('asc') }
+  }
+
+  function SortIcon({ col }: { col: string }) {
+    if (sortBy !== col) return <span className="ml-1 text-slate-300 opacity-0 group-hover:opacity-50">↕</span>
+    return <span className="ml-1 text-slate-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+  }
+
   return (
     <section className="container py-12">
       <h2 className="page-title mb-6">Warranty Registrations</h2>
@@ -153,6 +165,7 @@ export default function AdminWarranties() {
           {exporting ? 'Exporting...' : 'Save as PDF'}
         </button>
       </div>
+
       
       
       {total === 0 && (
@@ -163,11 +176,19 @@ export default function AdminWarranties() {
       <table className="w-full text-xs border border-slate-200 text-[#6B6B6B]">
           <thead>
             <tr className="bg-slate-50">
-              <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">ID</th>
+              <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700 cursor-pointer select-none hover:bg-slate-100 group" onClick={() => handleSort('id')}>
+                <div className="flex items-center gap-1">
+                  ID <SortIcon col="id" />
+                </div>
+              </th>
               <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Customer</th>
               <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Phone Model</th>
               <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Country</th>
-              <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Product Type</th>
+              <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700 cursor-pointer select-none hover:bg-slate-100 group" onClick={() => handleSort('productType')}>
+                <div className="flex items-center gap-1">
+                  Product Type <SortIcon col="productType" />
+                </div>
+              </th>
               <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Coverage BUY/EXP</th>
               <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Product Code</th>
               <th className="p-2 border sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-700">Date of Registration</th>

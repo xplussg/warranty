@@ -232,7 +232,7 @@ export async function uploadWarranties(file: File): Promise<any> {
   })
 }
 
-export async function searchWarranties(q = '', page = 1, pageSize = 20, startDate = '', endDate = '', claimedBy = '') {
+export async function searchWarranties(q = '', page = 1, pageSize = 20, startDate = '', endDate = '', claimedBy = '', sortBy = 'id', sortOrder = 'desc') {
   const role = await getRole()
   if (role === 'partner' && !q.trim()) {
     return { items: [], total: 0, page, pageSize }
@@ -241,8 +241,11 @@ export async function searchWarranties(q = '', page = 1, pageSize = 20, startDat
   let query = supabase
     .from('warranty_registrations')
     .select('*', { count: 'exact' })
-    .order('id', { ascending: true })
 
+  // Map sortBy to database columns
+  const sortColumn = sortBy === 'productType' ? 'product_type' : 'id'
+  query = query.order(sortColumn, { ascending: sortOrder === 'asc' })
+  
   if (startDate) {
     query = query.gte('claimed_at', startDate)
   }
