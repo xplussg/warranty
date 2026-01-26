@@ -143,9 +143,9 @@ export default function AdminWarranties() {
       <h2 className="page-title mb-6">Warranty Registrations</h2>
       
       <div className="flex flex-wrap items-center gap-3 mb-3">
-        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Search" value={q} onChange={e => setQ(e.target.value)} />
+        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Search" value={q} onChange={e => { setQ(e.target.value); setPage(1) }} />
         
-        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Claimed By (Email)" value={claimedBy} onChange={e => setClaimedBy(e.target.value)} style={{ width: 180 }} />
+        <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Claimed By (Email)" value={claimedBy} onChange={e => { setClaimedBy(e.target.value); setPage(1) }} style={{ width: 180 }} />
 
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium whitespace-nowrap">From:</label>
@@ -158,7 +158,7 @@ export default function AdminWarranties() {
         </div>
 
         {(startDate || endDate || claimedBy) && (
-          <button onClick={() => { setStartDate(''); setEndDate(''); setClaimedBy('') }} className="px-3 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50">Clear Filter</button>
+          <button onClick={() => { setStartDate(''); setEndDate(''); setClaimedBy(''); setPage(1) }} className="px-3 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50">Clear Filter</button>
         )}
         
         <button onClick={exportPdf} disabled={exporting} className="ml-auto px-4 py-2 rounded-md bg-slate-800 text-white text-sm hover:bg-slate-700 disabled:opacity-50">
