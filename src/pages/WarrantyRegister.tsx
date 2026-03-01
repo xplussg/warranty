@@ -130,7 +130,8 @@ export default function WarrantyRegister() {
       'Dream Case'
     ],
     'X-Plus Accessories': [
-      'X-Lens'
+      'X-Lens',
+      'SpeedStand Cable'
     ]
   }
   const availableProducts = productCategory ? (productOptions[productCategory] || []) : []
