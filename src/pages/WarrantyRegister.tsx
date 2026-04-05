@@ -131,7 +131,8 @@ export default function WarrantyRegister() {
     ],
     'X-Plus Accessories': [
       'X-Lens',
-      'SpeedStand Cable'
+      'SpeedStand Cable',
+      'FluxDrive'
     ]
   }
   const availableProducts = productCategory ? (productOptions[productCategory] || []) : []
