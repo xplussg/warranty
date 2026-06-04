@@ -22,7 +22,6 @@ const areas: Area[] = [
     name: 'North & Central Area',
     items: [
       { name: 'Mobile Bash', address: '810 Geylang Road, City Plaza #01-07/#01-12/#01-25, Singapore 409286', hours: 'Mon – Sat: 11:00am – 8:00pm · Sun: 9:30am – 7:00pm · PH timings may vary' },
-      { name: 'Mobile Fashion', address: '9 Bishan Place, Junction 8 Shopping Centre Level 2, Singapore 579837 (Near OCBC Bank)', hours: 'Mon – Sun: 11:30am – 9:30pm' },
       { name: 'One2Free Mobile (24 Hours)', address: '382 Geylang Road Singapore 389384' },
       { name: '66 Connexions Mobile', address: '190 Toa Payoh Central #01-558 Singapore 310190' },
       { name: 'Mc Concept', address: '25 Bendemeer Road #01-603 Singapore 330025', phone: '9125 8688' },

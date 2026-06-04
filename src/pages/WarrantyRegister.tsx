@@ -109,7 +109,9 @@ export default function WarrantyRegister() {
     'DIY X-Plus': [
       'UV Nano AF Clear',
       'UV Nano Matte',
-      'UV Privacy Matte',
+      'UV 180 Privacy Matte',
+      'X-Plus 180 Privacy Matte',
+      'X-Plus 360 Privacy Matte',
       'Anti-Shock Gold',
       'X-Fold',
       'X-Tablet',
@@ -131,6 +133,7 @@ export default function WarrantyRegister() {
     ],
     'X-Plus Accessories': [
       'X-Lens',
+      'Lanyard Cable',
       'SpeedStand Cable',
       'FluxDrive'
     ]
