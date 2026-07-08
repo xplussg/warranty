@@ -52,7 +52,9 @@ export async function me() {
 }
 
 export async function logout() {
-  await supabase.auth.signOut({ scope: 'global' } as any)
+  // Local scope clears the stored session immediately without a blocking
+  // server round-trip, so the post-logout redirect can never hang.
+  await supabase.auth.signOut({ scope: 'local' } as any)
 }
 
 export async function getSessionToken() {

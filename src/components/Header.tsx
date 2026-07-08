@@ -1,8 +1,8 @@
 import { Link, NavLink } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { clsx } from 'clsx'
-import { logout, me, getRole } from '../lib/auth'
-import { supabase } from '../lib/supabase'
+import { logout } from '../lib/auth'
+import { useAuth } from '../lib/auth-context'
 
 const nav = [
   { to: '/warranty-register', label: 'Warranty Registration' },
@@ -11,17 +11,8 @@ const nav = [
 
 export default function Header() {
   const [open, setOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [role, setRole] = useState<string | null>(null)
-
-  useEffect(() => {
-    ;(async () => { const u = await me(); setUser(u?.session?.user || null); setRole(await getRole()) })()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null)
-      setRole(await getRole())
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+  const { session, role } = useAuth()
+  const user = session?.user || null
 
   return (
     <header className="border-b border-slate-100 bg-white/80 backdrop-blur relative z-[1100]">
@@ -42,7 +33,7 @@ export default function Header() {
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <NavLink to={role === 'partner' ? '/partner/dashboard' : '/owner/dashboard'} onClick={() => setOpen(false)} className={({ isActive }) => clsx('py-2 text-sm', isActive ? 'text-[#D32F2F]' : 'text-[#6B6B6B] hover:text-[#D32F2F]')}>Dashboard</NavLink>
               <span className="text-sm text-[#6B6B6B] py-2 md:py-0">{String(user.email)}</span>
-              <button className="text-sm text-[#6B6B6B] hover:text-[#D32F2F] text-left md:text-center py-2 md:py-0" onClick={async () => { try { setOpen(false); setUser(null); setRole(null); await logout(); window.location.assign('/login') } catch { window.location.assign('/login') } }}>Logout</button>
+              <button className="text-sm text-[#6B6B6B] hover:text-[#D32F2F] text-left md:text-center py-2 md:py-0" onClick={async () => { setOpen(false); try { await logout() } catch {} window.location.assign('/login') }}>Logout</button>
             </div>
           ) : (
             <NavLink to="/login" onClick={() => setOpen(false)} className={({ isActive }) => clsx('py-2 text-sm', isActive ? 'text-[#D32F2F]' : 'text-[#6B6B6B] hover:text-[#D32F2F]')}>Login</NavLink>

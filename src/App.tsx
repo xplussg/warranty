@@ -1,5 +1,4 @@
 import { Route, Routes, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import WarrantyRegister from './pages/WarrantyRegister'
@@ -14,69 +13,30 @@ import PartnerDashboard from './pages/PartnerDashboard'
 import PartnerWarranties from './pages/PartnerWarranties'
 import ChangePassword from './pages/ChangePassword'
 // Removed policy pages in favor of inline drawers on WarrantyRegister
-import { me, getRole } from './lib/auth'
+import { AuthProvider, useAuth } from './lib/auth-context'
+
+function AuthLoading() {
+  return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
+}
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
-  const [ready, setReady] = useState(false)
-  const [signedIn, setSignedIn] = useState(false)
-  useEffect(() => {
-    const timer = setTimeout(() => { setSignedIn(false); setReady(true) }, 1500)
-    ;(async () => {
-      try {
-        const info = await me();
-        setSignedIn(Boolean(info?.session))
-      } catch {
-        setSignedIn(false)
-      } finally {
-        clearTimeout(timer)
-        setReady(true)
-      }
-    })()
-  }, [])
-  if (!ready) return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
-  if (!signedIn) return <Navigate to="/login" replace />
+  const { session, initializing } = useAuth()
+  if (initializing) return <AuthLoading />
+  if (!session) return <Navigate to="/login" replace />
   return children
 }
 
 function OwnerRoute({ children }: { children: JSX.Element }) {
-  const [ready, setReady] = useState(false)
-  const [role, setRole] = useState<string | null>(null)
-  useEffect(() => {
-    const timer = setTimeout(() => { setRole(null); setReady(true) }, 1500)
-    ;(async () => {
-      try {
-        setRole(await getRole())
-      } catch {
-        setRole(null)
-      } finally {
-        clearTimeout(timer)
-        setReady(true)
-      }
-    })()
-  }, [])
-  if (!ready) return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
+  const { role, initializing } = useAuth()
+  if (initializing) return <AuthLoading />
   if (role === null) return <Navigate to="/login" replace />
   if (role !== 'owner') return <Navigate to="/partner/dashboard" replace />
   return children
 }
 
 function PartnerRoute({ children }: { children: JSX.Element }) {
-  const [ready, setReady] = useState(false)
-  const [role, setRole] = useState<string | null>(null)
-  useEffect(() => {
-    const timer = setTimeout(() => { setRole(null); setReady(true) }, 1500)
-    ;(async () => {
-      try {
-        setRole(await getRole())
-      } catch {
-        setRole(null)
-      } finally {
-        clearTimeout(timer)
-        setReady(true)
-      }
-    })()
-  }, [])
-  if (!ready) return <div className="container py-12 text-center text-sm text-slate-600">Loading…</div>
+  const { role, initializing } = useAuth()
+  if (initializing) return <AuthLoading />
   if (role === null) return <Navigate to="/login" replace />
   if (role !== 'partner') return <Navigate to="/owner/dashboard" replace />
   return children
@@ -84,6 +44,7 @@ function PartnerRoute({ children }: { children: JSX.Element }) {
 
 export default function App() {
   return (
+    <AuthProvider>
     <div className="min-h-screen flex flex-col bg-white app-theme">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" />
       <style>{`
@@ -152,5 +113,6 @@ export default function App() {
       </main>
       <Footer />
     </div>
+    </AuthProvider>
   )
 }

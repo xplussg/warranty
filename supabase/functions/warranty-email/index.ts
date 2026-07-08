@@ -60,6 +60,18 @@ async function handler(req: Request): Promise<Response> {
 
 function renderHtml(d: any): string {
   const fmt = (v: any) => String(v ?? '').trim()
+  // Format a YYYY-MM-DD (or ISO) value as e.g. "6 July 2026". Parses the
+  // date parts directly to avoid timezone shifts from new Date(). Falls back
+  // to the original string if it isn't a recognisable date.
+  const fmtDate = (v: any) => {
+    const s = fmt(v)
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (!m) return s
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    const mi = parseInt(m[2], 10) - 1
+    if (mi < 0 || mi > 11) return s
+    return `${parseInt(m[3], 10)} ${months[mi]} ${m[1]}`
+  }
   const items: [string, string][] = [
     ['Name', fmt(d.name)],
     ['Email', fmt(d.email)],
@@ -67,46 +79,53 @@ function renderHtml(d: any): string {
     ['Phone Model', fmt(d.phone_model ?? d.phoneModel)],
     ['Country', fmt(d.country)],
     ['Product Type', fmt(d.product_type ?? d.productType)],
-    ['Purchase Date', fmt(d.purchase_date ?? d.purchaseDate)],
-    ['Expiry Date', fmt(d.expiry_date ?? d.expiryDate)],
+    ['Purchase Date', fmtDate(d.purchase_date ?? d.purchaseDate)],
+    ['Expiry Date', fmtDate(d.expiry_date ?? d.expiryDate)],
     ['Product Code', fmt(d.product_code ?? d.productCode)],
   ]
+  const year = new Date().getFullYear()
   const rows = items
     .filter(([_, v]) => v.length > 0)
-    .map(([k, v]) => `<tr><td style="width:30%;padding:12px;border-top:1px solid #FFCDD2;background:#FFEBEE;font-weight:600;color:#4A0A0E">${escapeHtml(k)}</td><td style="padding:12px;border-top:1px solid #FFCDD2">${escapeHtml(v)}</td></tr>`)
+    .map(([k, v]) => `<tr><td style="padding:10px 0;border-top:1px solid #EEEEEE;color:#6B7280;font-size:13px;width:40%;vertical-align:top">${escapeHtml(k)}</td><td style="padding:10px 0;border-top:1px solid #EEEEEE;color:#1F2937;font-size:14px;font-weight:500;text-align:right;vertical-align:top;word-break:break-word">${escapeHtml(v)}</td></tr>`)
     .join('')
   const logo = 'https://www.xplus.com.sg/xplus.png'
   return `<!doctype html>
-  <html>
-  <body style="margin:0;background:linear-gradient(135deg, #fffcfc 0%, #FFEBEE 100%);font-family:Montserrat,system-ui,-apple-system,Segoe UI,Roboto;color:#4A0A0E">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 0">
-      <tr><td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#FFFFFF;border:1px solid #FFCDD2;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.15)">
-          <tr>
-            <td style="background:#D32F2F;color:#FFFFFF;padding:12px 16px">
-              <table width="100%" cellspacing="0" cellpadding="0"><tr>
-                <td style="vertical-align:middle"><img src="${logo}" alt="XPLUS" width="120" style="display:block" /></td>
-                <td align="right" style="vertical-align:middle;font-size:16px;font-weight:600">Registration Details</td>
-              </tr></table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 20px">
-              <h2 style="margin:0 0 10px;color:#D32F2F;font-size:22px">Warranty Registration Successful</h2>
-              <p style="margin:0 0 16px;color:#6B6B6B;font-size:15px;line-height:1.8">Your XPLUS warranty has been activated. Keep this email for your records.</p>
-              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows}</table>
-              <div style="margin-top:16px;padding:12px;border:1px solid #FFCDD2;border-radius:10px;background:#FFF7F7;color:#4A0A0E">
-                <div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div>
-                <div style="font-size:14px;line-height:1.5">100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div>
-              </div>
-              <p style="margin-top:16px;font-size:13px;color:#555">If anything looks incorrect, reply to this email and our team will assist you.</p>
-            </td>
-          </tr>
-        </table>
-      </td></tr>
-    </table>
-  </body>
-  </html>`
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="x-apple-disable-message-reformatting" />
+<style>
+  @media only screen and (max-width:600px){
+    .xp-container{width:100% !important}
+    .xp-pad{padding:20px !important}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#F3F4F6;font-family:'Montserrat',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1F2937">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">Your X-PLUS warranty is now active — here are your registration details.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F4F6">
+    <tr><td align="center" style="padding:24px 12px">
+      <table role="presentation" class="xp-container" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:600px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden">
+        <tr><td style="background:#FFFFFF;padding:20px 24px 16px"><img src="${logo}" alt="X-PLUS" width="130" style="display:block;border:0;height:auto" /></td></tr>
+        <tr><td style="height:4px;line-height:4px;font-size:0;background:#D32F2F">&nbsp;</td></tr>
+        <tr><td class="xp-pad" style="padding:24px">
+          <h1 style="margin:0 0 8px;color:#D32F2F;font-size:20px;font-weight:600">Warranty Registration Successful</h1>
+          <p style="margin:0 0 20px;color:#6B7280;font-size:14px;line-height:1.6">Your X-PLUS warranty has been activated. Please keep this email for your records.</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows}</table>
+          <div style="margin-top:20px;padding:14px 16px;border:1px solid #E5E7EB;border-radius:8px;background:#F9FAFB">
+            <div style="font-weight:600;color:#D32F2F;font-size:14px;margin-bottom:4px">The X-PLUS Promise</div>
+            <div style="font-size:13px;line-height:1.6;color:#4B5563">100% Genuine &middot; Exceptional Client Care &middot; 180-Day 1-to-1 Exchange</div>
+          </div>
+        </td></tr>
+        <tr><td style="padding:16px 24px 24px;border-top:1px solid #EEEEEE">
+          <p style="margin:0;color:#9CA3AF;font-size:12px;line-height:1.6">&copy; ${year} X-PLUS SG &middot; <a href="https://www.xplus.com.sg" style="color:#9CA3AF">xplus.com.sg</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
 }
 
 function escapeHtml(s: string): string {
