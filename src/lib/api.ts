@@ -121,10 +121,6 @@ export async function registerWarranty(data: any) {
             await fetch(`${base}/functions/v1/warranty-email`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': anon }, body: JSON.stringify({ to: row.email, details }) }).catch(() => {})
           }
         }
-        try {
-          const endpoint = 'https://xplus.com.sg/api/warranty-register.php'
-          await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: row.email, details }) }).catch(() => {})
-        } catch {}
       } catch {}
     }, 0)
   } catch {}

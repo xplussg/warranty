@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   try {
     const cors = {
       'Access-Control-Allow-Origin': '*',
@@ -26,13 +26,16 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     async function send(from: string) {
+      const bcc = (Deno.env.get('WARRANTY_NOTIFY_EMAIL') || '').trim()
+      const body: Record<string, unknown> = { from, to: [to], subject, html }
+      if (bcc) body.bcc = [bcc]
       return await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ from, to: [to], subject, html })
+        body: JSON.stringify(body)
       })
     }
     const preferredFrom = 'XPLUS <no-reply@xplus.com.sg>'
@@ -110,6 +113,4 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[c] as string))
 }
 
-// Ensure default export is picked by Supabase Edge runtime
-// deno-lint-ignore no-unused-vars
-export const serve = handler
+Deno.serve(handler)
