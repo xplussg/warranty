@@ -115,7 +115,8 @@ export default function WarrantyRegister() {
       'Anti-Shock Gold',
       'X-Fold',
       'X-Tablet',
-      'X-Paper'
+      'X-Paper',
+      'Armorvisor Lite'
     ],
     'X-Plus X-Buffer': [
       'X-Buffer Clear',

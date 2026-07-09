@@ -47,12 +47,14 @@ async function getUserFromBearer(req: express.Request) {
   return user
 }
 
-function requireRole(allowed: ('admin' | 'partner')[]) {
+function requireRole(allowed: ('admin' | 'partner' | 'owner')[]) {
   return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const user = await getUserFromBearer(req)
     if (!user) return res.status(401).json({ error: 'Unauthorized' })
-    const role = ((user.user_metadata as any)?.role) || ((user.app_metadata as any)?.role)
-    if (!role || !allowed.includes(role)) return res.status(403).json({ error: 'Forbidden' })
+    let role = ((user.user_metadata as any)?.role) || ((user.app_metadata as any)?.role)
+    if (!role) role = 'owner'
+    if (role === 'admin') role = 'owner'
+    if (!allowed.includes(role)) return res.status(403).json({ error: 'Forbidden' })
     ;(req as any).supabaseUser = user
     next()
   }
@@ -257,7 +259,7 @@ app.get('/api/product-codes/check/:code', async (req, res) => {
   })
 })
 
-app.post('/api/product-codes/upload', requireRole(['admin']), async (req, res) => {
+app.post('/api/product-codes/upload', requireRole(['admin', 'owner']), async (req, res) => {
   const body = req.body as UploadPayload | { csv?: string }
   const existing = await readCodes()
   let incoming: ProductCode[] = []
@@ -299,9 +301,23 @@ app.post('/api/product-codes/upload', requireRole(['admin']), async (req, res) =
         upsertRows.push(row)
       }
       if (upsertRows.length === 0) return res.json({ count: 0, added: 0 })
-      const { error } = await supabaseAdmin.from('product_codes').upsert(upsertRows, { onConflict: 'code' })
-      if (error) return res.status(500).json({ error: error.message })
-      return res.json({ count: upsertRows.length, added: upsertRows.length })
+      
+      const rowMap = new Map()
+      for (const r of upsertRows) rowMap.set(r.code, r)
+      const uniqueRows = Array.from(rowMap.values())
+
+      let added = 0
+      for (let i = 0; i < uniqueRows.length; i += 1000) {
+        const batch = uniqueRows.slice(i, i + 1000)
+        console.log(`Inserting batch of ${batch.length} codes...`)
+        const { error } = await supabaseAdmin.from('product_codes').upsert(batch, { onConflict: 'code' })
+        if (error) {
+          console.error("Supabase upsert error:", error.message, error.details, error.hint);
+          return res.status(500).json({ error: error.message })
+        }
+        added += batch.length
+      }
+      return res.json({ count: added, added })
     } else if ('codes' in body && Array.isArray(body.codes)) {
       const upsertRows = (body.codes as any[]).map((c: any) => {
         const code = cleanCode(c.code)
@@ -311,10 +327,25 @@ app.post('/api/product-codes/upload', requireRole(['admin']), async (req, res) =
         const idNum = Number(c.id)
         if (Number.isFinite(idNum) && idNum > 0) row.id = idNum
         return row
-      })
-      const { error } = await supabaseAdmin.from('product_codes').upsert(upsertRows, { onConflict: 'code' })
-      if (error) return res.status(500).json({ error: error.message })
-      return res.json({ count: upsertRows.length, added: upsertRows.length })
+      }).filter(r => r.code)
+
+      // Deduplicate by code to prevent batch conflicts
+      const rowMap = new Map()
+      for (const r of upsertRows) rowMap.set(r.code, r)
+      const uniqueRows = Array.from(rowMap.values())
+
+      let added = 0
+      for (let i = 0; i < uniqueRows.length; i += 1000) {
+        const batch = uniqueRows.slice(i, i + 1000)
+        console.log(`Inserting batch of ${batch.length} codes (JSON)...`)
+        const { error } = await supabaseAdmin.from('product_codes').upsert(batch, { onConflict: 'code' })
+        if (error) {
+          console.error("Supabase upsert error:", error.message, error.details, error.hint);
+          return res.status(500).json({ error: error.message })
+        }
+        added += batch.length
+      }
+      return res.json({ count: added, added })
     } else {
       return res.status(400).json({ error: 'Provide {codes:[]} or {csv:"..."}' })
     }
@@ -594,62 +625,8 @@ app.post('/api/product-codes/reset', requireRole(['admin']), async (_req, res) =
   res.json({ ok: true, cleared: 'db' })
 })
 
-app.post('/api/warranty/register', async (req, res) => {
-  const b = req.body as any
-  const code = String(b.productCode || '').replace(/\s+/g, '')
-  const len = code.length
-  if (!(len === 16 || len === 20)) return res.status(400).json({ error: 'Invalid product code length' })
-  const purchaseDate = b.purchaseDate
-  const expiryDate = b.expiryDate || (() => {
-    const d = new Date(purchaseDate)
-    d.setDate(d.getDate() + 180)
-    return d.toISOString().slice(0, 10)
-  })()
-  const record = {
-    name: b.name,
-    email: b.email,
-    phoneModel: b.phoneModel || '',
-    mobile: b.mobile || '',
-    country: b.country || '',
-    protectorType: b.protectorType || '',
-    purchaseDate,
-    expiryDate,
-    productCode: code,
-    status: (b.status || 'Not claimed'),
-    createdAt: new Date().toISOString()
-  }
-  if (!pool && !useSupabase) {
-    const warranties = JSON.parse(fs.readFileSync(warrantiesFile, 'utf8'))
-    const list = warranties.warranties as any[]
-    const next = list.length ? Math.max(...list.map(w => Number(w.id) || 0)) + 1 : 1
-    const toSave = { id: next, ...record }
-    warranties.warranties.push(toSave)
-    fs.writeFileSync(warrantiesFile, JSON.stringify(warranties, null, 2))
-  } else if (useSupabase) {
-    const { error } = await supabaseAdmin.from('warranty_registrations').insert({
-      name: record.name,
-      email: record.email,
-      phone_model: record.phoneModel,
-      mobile: record.mobile,
-      country: record.country,
-      product_type: b.productType || b.protectorType || '',
-      purchase_date: record.purchaseDate,
-      expiry_date: record.expiryDate,
-      product_code: record.productCode,
-      status: record.status,
-      created_at: record.createdAt,
-    }).single()
-    if (error) return res.status(500).json({ error: error.message })
-  } else {
-    const r = await pool!.query(
-      'insert into warranty_registrations (name, email, phone_model, mobile, country, product_type, purchase_date, expiry_date, product_code, status, created_at) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning id',
-      [record.name, record.email, record.phoneModel, record.mobile, record.country, b.protectorType || b.productType || '', record.purchaseDate, record.expiryDate, record.productCode, record.status, record.createdAt]
-    )
-    const newId = r.rows[0]?.id
-    if (!newId) return res.status(500).json({ error: 'Insert failed' })
-  }
-  res.json({ ok: true })
-})
+// Note: public warranty registration (with confirmation email) is handled by
+// the /api/warranty/register route defined near the bottom of this file.
 
 app.get('/api/warranty', requireRole(['admin']), async (req, res) => {
   const page = Number(req.query.page || 1)
@@ -1305,19 +1282,28 @@ app.post('/api/warranty/register', async (req, res) => {
     async function send(from: string) {
       const subject = 'XPLUS Warranty Registration Confirmation'
       const html = renderEmailHtml(details)
+      const bcc = String(process.env.WARRANTY_NOTIFY_EMAIL || '').trim()
+      const payload: Record<string, unknown> = { from, to: [email], subject, html }
+      if (bcc) payload.bcc = [bcc]
       const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [email], subject, html })
+        body: JSON.stringify(payload)
       })
       return r
     }
     let emailSent = false
-    if (apiKey) {
+    if (!apiKey) {
+      console.warn('RESEND_API_KEY not set; skipping warranty confirmation email for', email)
+    } else {
       let r = await send('XPLUS <no-reply@xplus.com.sg>')
-      if (!r.ok) r = await send('XPLUS <onboarding@resend.dev>')
+      if (!r.ok) {
+        console.error('Warranty email send failed (xplus.com.sg from):', r.status, await r.text().catch(() => ''))
+        r = await send('XPLUS <onboarding@resend.dev>')
+      }
       emailSent = r.ok
       if (!emailSent) {
+        console.error('Warranty email send failed (resend.dev fallback):', r.status, await r.text().catch(() => ''))
         setTimeout(async () => { try { await send('XPLUS <no-reply@xplus.com.sg>') } catch {} }, 2000)
         setTimeout(async () => { try { await send('XPLUS <no-reply@xplus.com.sg>') } catch {} }, 5000)
       }
@@ -1348,6 +1334,15 @@ app.post('/api/warranty/register', async (req, res) => {
 
 function renderEmailHtml(d: any): string {
   const fmt = (v: any) => String(v ?? '').trim()
+  const fmtDate = (v: any) => {
+    const s = fmt(v)
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (!m) return s
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    const mi = parseInt(m[2], 10) - 1
+    if (mi < 0 || mi > 11) return s
+    return `${parseInt(m[3], 10)} ${months[mi]} ${m[1]}`
+  }
   const items: [string, string][] = [
     ['Name', fmt(d.name)],
     ['Email', fmt(d.email)],
@@ -1355,13 +1350,14 @@ function renderEmailHtml(d: any): string {
     ['Phone Model', fmt(d.phoneModel)],
     ['Country', fmt(d.country)],
     ['Product Type', fmt(d.productType)],
-    ['Purchase Date', fmt(d.purchaseDate)],
-    ['Expiry Date', fmt(d.expiryDate)],
+    ['Purchase Date', fmtDate(d.purchaseDate)],
+    ['Expiry Date', fmtDate(d.expiryDate)],
     ['Product Code', fmt(d.productCode)]
   ]
-  const rows = items.filter(([_, v]) => v.length > 0).map(([k, v]) => `<tr><td style="width:30%;padding:12px;border-top:1px solid #FFCDD2;background:#FFEBEE;font-weight:600;color:#4A0A0E">${escapeHtml(String(k))}</td><td style="padding:12px;border-top:1px solid #FFCDD2">${escapeHtml(String(v))}</td></tr>`).join('')
+  const year = new Date().getFullYear()
+  const rows = items.filter(([_, v]) => v.length > 0).map(([k, v]) => `<tr><td style="padding:10px 0;border-top:1px solid #EEEEEE;color:#6B7280;font-size:13px;width:40%;vertical-align:top">${escapeHtml(String(k))}</td><td style="padding:10px 0;border-top:1px solid #EEEEEE;color:#1F2937;font-size:14px;font-weight:500;text-align:right;vertical-align:top;word-break:break-word">${escapeHtml(String(v))}</td></tr>`).join('')
   const logo = 'https://www.xplus.com.sg/xplus.png'
-  return `<!doctype html><html><body style="margin:0;background:linear-gradient(135deg, #fffcfc 0%, #FFEBEE 100%);font-family:Montserrat,system-ui,-apple-system,Segoe UI,Roboto;color:#4A0A0E"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 0"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#FFFFFF;border:1px solid #FFCDD2;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(138,21,27,0.15)"><tr><td style="background:#D32F2F;color:#FFFFFF;padding:12px 16px"><table width="100%" cellspacing="0" cellpadding="0"><tr><td style="vertical-align:middle"><img src="${logo}" alt="XPLUS" width="120" style="display:block" /></td><td align="right" style="vertical-align:middle;font-size:16px;font-weight:600">Registration Details</td></tr></table></td></tr><tr><td style="padding:24px 20px"><h2 style="margin:0 0 10px;color:#D32F2F;font-size:22px">Warranty Registration Successful</h2><p style="margin:0 0 16px;color:#6B6B6B;font-size:15px;line-height:1.8">Your XPLUS warranty has been activated. Keep this email for your records.</p><table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows}</table><div style="margin-top:16px;padding:12px;border:1px solid #FFCDD2;border-radius:10px;background:#FFF7F7;color:#4A0A0E"><div style="font-weight:600;margin-bottom:6px">X-Plus Promise</div><div style="font-size:14px;line-height:1.5">100% Genuine • Exceptional Client Care • 180-Day 1-to-1 Exchange</div></div><p style="margin-top:16px;font-size:13px;color:#555">If anything looks incorrect, reply to this email and our team will assist you.</p></td></tr></table></td></tr></table></body></html>`
+  return `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="x-apple-disable-message-reformatting" /><style>@media only screen and (max-width:600px){.xp-container{width:100% !important}.xp-pad{padding:20px !important}}</style></head><body style="margin:0;padding:0;background:#F3F4F6;font-family:'Montserrat',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1F2937"><div style="display:none;max-height:0;overflow:hidden;opacity:0">Your X-PLUS warranty is now active — here are your registration details.</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F4F6"><tr><td align="center" style="padding:24px 12px"><table role="presentation" class="xp-container" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:600px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden"><tr><td style="background:#FFFFFF;padding:20px 24px 16px"><img src="${logo}" alt="X-PLUS" width="130" style="display:block;border:0;height:auto" /></td></tr><tr><td style="height:4px;line-height:4px;font-size:0;background:#D32F2F">&nbsp;</td></tr><tr><td class="xp-pad" style="padding:24px"><h1 style="margin:0 0 8px;color:#D32F2F;font-size:20px;font-weight:600">Warranty Registration Successful</h1><p style="margin:0 0 20px;color:#6B7280;font-size:14px;line-height:1.6">Your X-PLUS warranty has been activated. Please keep this email for your records.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows}</table><div style="margin-top:20px;padding:14px 16px;border:1px solid #E5E7EB;border-radius:8px;background:#F9FAFB"><div style="font-weight:600;color:#D32F2F;font-size:14px;margin-bottom:4px">The X-PLUS Promise</div><div style="font-size:13px;line-height:1.6;color:#4B5563">100% Genuine &middot; Exceptional Client Care &middot; 180-Day 1-to-1 Exchange</div></div></td></tr><tr><td style="padding:16px 24px 24px;border-top:1px solid #EEEEEE"><p style="margin:0;color:#9CA3AF;font-size:12px;line-height:1.6">&copy; ${year} X-PLUS SG &middot; <a href="https://www.xplus.com.sg" style="color:#9CA3AF">xplus.com.sg</a></p></td></tr></table></td></tr></table></body></html>`
 }
 
 function escapeHtml(s: string): string {

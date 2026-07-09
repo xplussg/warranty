@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listCodes, deleteCode } from '../lib/api'
-import { getRole } from '../lib/auth'
+import { listCodes, deleteCode, uploadCodes } from '../lib/api'
+  import { getRole } from '../lib/auth'
 
 export default function AdminCodes() {
   
@@ -11,11 +11,68 @@ export default function AdminCodes() {
   const [pageSize, setPageSize] = useState(20)
   const [items, setItems] = useState<any[]>([])
   const [total, setTotal] = useState(0)
-  const [message] = useState('')
+  const [message, setMessage] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
+  const [showPasteBox, setShowPasteBox] = useState(false)
+  const [pasteText, setPasteText] = useState('')
 
   useEffect(() => { getRole().then(setRole) }, [])
 
-  // upload hidden
+  async function handleUpload(e: any) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setMessage('')
+    setUploadProgress('Reading file...')
+    try {
+      const res = await uploadCodes(file, (progressMsg) => {
+        setUploadProgress(progressMsg)
+      })
+      if (res.error) {
+        setMessage('Upload failed: ' + res.error)
+      } else {
+        setMessage(`Uploaded ${res.count} codes successfully.`)
+        await refresh()
+      }
+    } catch (err: any) {
+      setMessage('Upload error: ' + err.message)
+    } finally {
+      setUploading(false)
+      setUploadProgress('')
+      e.target.value = ''
+    }
+  }
+
+  async function handlePasteUpload() {
+    if (!pasteText.trim()) return
+    setUploading(true)
+    setMessage('')
+    setUploadProgress('Preparing text for upload...')
+    try {
+      // Create a temporary File object from the pasted text
+      const blob = new Blob([pasteText], { type: 'text/plain' })
+      const file = new File([blob], 'pasted_codes.txt', { type: 'text/plain' })
+      
+      const res = await uploadCodes(file, (progressMsg) => {
+        setUploadProgress(progressMsg)
+      })
+      
+      if (res.error) {
+        setMessage('Upload failed: ' + res.error)
+      } else {
+        setMessage(`Uploaded ${res.count} codes successfully.`)
+        setPasteText('')
+        setShowPasteBox(false)
+        await refresh()
+      }
+    } catch (err: any) {
+      setMessage('Upload error: ' + err.message)
+    } finally {
+      setUploading(false)
+      setUploadProgress('')
+    }
+  }
 
   function fmtDateTimeLocal(v: any) {
     const t = String(v || '').trim()
@@ -37,6 +94,12 @@ export default function AdminCodes() {
   }
   useEffect(() => { refresh() }, [q, page, pageSize])
   async function onDelete(id: number) { await deleteCode(id); await refresh() }
+  // Product-code upload is a local admin tool. It stays hidden everywhere by
+  // default (including the live site) and is only revealed when running on
+  // localhost with `?upload` in the URL, e.g. http://localhost:5173/...?upload
+  const showUpload = typeof window !== 'undefined'
+    && window.location.hostname === 'localhost'
+    && new URLSearchParams(window.location.search).has('upload')
   return (
     <section className="container py-12">
       <div className="mx-auto">
@@ -45,7 +108,52 @@ export default function AdminCodes() {
       <div className="mt-8">
         <div className="flex items-center gap-3 mb-3 justify-between">
           <input className="rounded-md border border-slate-300 px-3 py-2" placeholder="Search" value={q} onChange={e => setQ(e.target.value)} />
+          {showUpload && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowPasteBox(!showPasteBox)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                disabled={uploading}
+              >
+                {showPasteBox ? 'Hide Paste Box' : 'Paste Codes'}
+              </button>
+              <label className={`cursor-pointer rounded-md bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700 ${uploading ? 'opacity-50' : ''}`}>
+                {uploading ? 'Uploading...' : 'Upload File (.csv, .txt)'}
+                <input type="file" accept=".csv,text/csv,.txt,text/plain" className="hidden" onChange={handleUpload} disabled={uploading} />
+              </label>
+            </div>
+          )}
         </div>
+        
+        {showPasteBox && showUpload && (
+          <div className="mb-6 p-4 border border-slate-200 rounded-md bg-slate-50">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Paste Product Codes</h3>
+            <p className="text-xs text-slate-500 mb-3">Paste codes here, one per line. Optionally add product type separated by a comma or tab.</p>
+            <textarea 
+              className="w-full h-32 p-3 text-sm border border-slate-300 rounded-md font-mono"
+              placeholder="1234123412341234&#10;8899123412341234, Dream Case"
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              disabled={uploading}
+            ></textarea>
+            <div className="mt-3 flex justify-end">
+              <button 
+                onClick={handlePasteUpload}
+                disabled={!pasteText.trim() || uploading}
+                className="rounded-md bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploading ? 'Uploading...' : 'Upload Pasted Codes'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {uploadProgress && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm font-medium animate-pulse">
+            {uploadProgress}
+          </div>
+        )}
+
         <table className="w-full text-sm border border-slate-200">
           <thead>
             <tr className="bg-slate-50">

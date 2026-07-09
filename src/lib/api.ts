@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { me, getRole } from './auth'
+import { me, getRole, getSessionToken } from './auth'
 import Papa from 'papaparse'
 
 export type CodeCheck = {
@@ -176,23 +176,75 @@ export async function searchWarrantiesByEmail(email: string) {
   return { items, count: count || items.length }
 }
 
-export async function uploadCodes(file: File): Promise<any> {
+export async function uploadCodes(file: File, onProgress?: (msg: string) => void): Promise<any> {
+  const isLocal = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost'
+  const port = ((import.meta as any).env?.VITE_API_PORT) || 5176
+
   return new Promise((resolve) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results: any) => {
-        const rows = results.data.map((r: any) => ({
-          code: r.code || r.Code || r['Product Code'],
-          product_type: r.product_type || r['Product Type'] || null
-        })).filter((r: any) => r.code)
+    const isTxt = file.name.toLowerCase().endsWith('.txt')
+    if (isTxt) {
+      if (onProgress) onProgress('Reading text file...')
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const text = e.target?.result as string
+        if (onProgress) onProgress('Parsing lines...')
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+        const rows = lines.map(line => {
+          const parts = line.split(/[\t,]/)
+          const code = parts[0]?.trim()
+          const product_type = parts[1]?.trim() || null
+          return { code, product_type }
+        }).filter(r => r.code)
+
         if (rows.length === 0) return resolve({ error: 'No valid rows found' })
-        const { error } = await supabase.from('product_codes').insert(rows)
-        if (error) resolve({ error: error.message })
-        else resolve({ ok: true, count: rows.length })
-      },
-      error: (err: any) => resolve({ error: err.message })
-    })
+        
+        try {
+          let added = 0
+          for (let i = 0; i < rows.length; i += 1000) {
+            const batch = rows.slice(i, i + 1000)
+            if (onProgress) onProgress(`Uploading batch ${Math.floor(i/1000) + 1} of ${Math.ceil(rows.length/1000)}...`)
+            const { error } = await supabase.from('product_codes').upsert(batch, { onConflict: 'code' })
+            if (error) return resolve({ error: error.message })
+            added += batch.length
+          }
+          if (onProgress) onProgress('Upload complete!')
+          return resolve({ ok: true, count: added })
+        } catch (err: any) {
+          return resolve({ error: String(err.message) })
+        }
+      }
+      reader.onerror = () => resolve({ error: 'Failed to read file' })
+      reader.readAsText(file)
+    } else {
+      if (onProgress) onProgress('Parsing CSV file...')
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results: any) => {
+          const rows = results.data.map((r: any) => ({
+            code: r.code || r.Code || r['Product Code'],
+            product_type: r.product_type || r['Product Type'] || null
+          })).filter((r: any) => r.code)
+          if (rows.length === 0) return resolve({ error: 'No valid rows found' })
+          
+          try {
+            let added = 0
+            for (let i = 0; i < rows.length; i += 1000) {
+              const batch = rows.slice(i, i + 1000)
+              if (onProgress) onProgress(`Uploading batch ${Math.floor(i/1000) + 1} of ${Math.ceil(rows.length/1000)}...`)
+              const { error } = await supabase.from('product_codes').upsert(batch, { onConflict: 'code' })
+              if (error) return resolve({ error: error.message })
+              added += batch.length
+            }
+            if (onProgress) onProgress('Upload complete!')
+            return resolve({ ok: true, count: added })
+          } catch (err: any) {
+            return resolve({ error: String(err.message) })
+          }
+        },
+        error: (err: any) => resolve({ error: err.message })
+      })
+    }
   })
 }
 
