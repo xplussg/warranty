@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { me, getRole, getSessionToken } from './auth'
+import { me, getRole } from './auth'
 import Papa from 'papaparse'
 
 export type CodeCheck = {
@@ -177,9 +177,6 @@ export async function searchWarrantiesByEmail(email: string) {
 }
 
 export async function uploadCodes(file: File, onProgress?: (msg: string) => void): Promise<any> {
-  const isLocal = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost'
-  const port = ((import.meta as any).env?.VITE_API_PORT) || 5176
-
   return new Promise((resolve) => {
     const isTxt = file.name.toLowerCase().endsWith('.txt')
     if (isTxt) {
