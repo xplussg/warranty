@@ -136,7 +136,16 @@ export default function WarrantyRegister() {
       'X-Lens',
       'Lanyard Cable',
       'SpeedStand Cable',
-      'FluxDrive'
+      'FluxDrive',
+      'SlimVolt Powerbank'
+    ],
+    'ArmorLink Cables': [
+      'Type C To Type C',
+      'Type C To Lightning',
+      'USB To Type C',
+      'USB To Lightning',
+      'Type C to 3.5mm(F)',
+      'Lightning To 3.5mm(F)'
     ]
   }
   const availableProducts = productCategory ? (productOptions[productCategory] || []) : []
